@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --font-cairo: 'Cairo', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), sans-serif;
+  --font-arabic: var(--font-cairo), sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), sans-serif;
+}
+
+/* Prevent Arabic letter spacing issues */
+[dir="rtl"],
+[dir="rtl"] *,
+.font-arabic,
+.font-arabic *,
+#contract-preview-page,
+#contract-preview-page *,
+#certificate-preview-page,
+#certificate-preview-page * {
+  letter-spacing: 0 !important;
+  word-spacing: normal !important;
+}
+
+/* Custom Scrollbar for Light Theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Signature Pad container styling */
+.sigCanvas {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  width: 100%;
+  height: 150px;
+  cursor: crosshair;
+}
+
+/* Print Specifics */
+@page {
+  size: A4 portrait;
+  margin: 8mm 6mm;
+}
+
+@media print {
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    font-size: 11pt !important;
+  }
+  
+  .no-print,
+  .print-area.no-print,
+  .printable-area.no-print,
+  header:not(.print-header),
+  nav,
+  aside,
+  button,
+  .sidebar-container {
+    display: none !important;
+  }
+  
+  .print-area,
+  .printable-area,
+  #quotation-page-1,
+  #quotation-page-2,
+  #contract-preview-page-continuous,
+  #certificate-preview-page,
+  #receipt-preview-page,
+  #salary-voucher-preview-page,
+  #letter-preview-page,
+  .continuous-flow-page {
+    display: block !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  .main-layout-container,
+  .workspace-split-pane {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  .page-break {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .avoid-break,
+  .keep-together,
+  .totals-block,
+  .signature-block,
+  .bank-details-block,
+  .terms-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
