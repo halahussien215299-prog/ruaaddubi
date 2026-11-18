@@ -675,10 +675,26 @@ export default function HRModule({
       const completedCount = milestones.filter(m => m.status === "completed").length;
       const newCompletionRate = Math.round((completedCount / milestones.length) * 100);
 
+      // Upload to Cloudinary CDN for high-speed delivery & lightweight DB
+      let finalPhotoUrl = techPhotoBase64;
+      try {
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: techPhotoBase64, folder: "ruaad_smart/site_photos" }),
+        });
+        if (uploadRes.ok) {
+          const upJson = await uploadRes.json();
+          if (upJson.url) finalPhotoUrl = upJson.url;
+        }
+      } catch (upErr) {
+        console.warn("Cloudinary upload fallback:", upErr);
+      }
+
       // Create new ProjectPhoto
       const newPhoto: ProjectPhoto = {
         id: `photo-${Date.now()}`,
-        url: techPhotoBase64,
+        url: finalPhotoUrl,
         caption: techPhotoCaption.trim() || `توثيق ميداني للمرحلة: ${selectedMilestone?.title}`,
         milestoneId: selectedMilestone?.id,
         milestoneTitle: selectedMilestone?.title,

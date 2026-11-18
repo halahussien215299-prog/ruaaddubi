@@ -498,9 +498,25 @@ export default function ProjectsModule({
       const pMilestones = getProjectMilestones(selectedProject);
       const chosenMs = pMilestones.find(m => m.id === managementMilestoneId) || pMilestones[0];
 
+      // Upload to Cloudinary CDN
+      let finalPhotoUrl = managementPhotoBase64;
+      try {
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: managementPhotoBase64, folder: "ruaad_smart/site_photos" }),
+        });
+        if (uploadRes.ok) {
+          const upJson = await uploadRes.json();
+          if (upJson.url) finalPhotoUrl = upJson.url;
+        }
+      } catch (upErr) {
+        console.warn("Cloudinary upload fallback:", upErr);
+      }
+
       const newPhoto: ProjectPhoto = {
         id: `photo-${Date.now()}`,
-        url: managementPhotoBase64,
+        url: finalPhotoUrl,
         caption: managementPhotoCaption.trim() || `توثيق مرحلة: ${chosenMs?.title || "الموقع الميداني"}`,
         milestoneId: chosenMs?.id,
         milestoneTitle: chosenMs?.title,
