@@ -633,6 +633,18 @@ export interface ProjectPhoto {
   phase?: string;
 }
 
+export interface ProjectBlueprint {
+  id: string;
+  name: string; // اسم المخطط أو الملف الهندسي
+  url: string; // رابط الملف على Cloudinary أو Base64
+  fileType: "pdf" | "image" | "dwg" | "doc" | "other" | string;
+  fileSize?: string;
+  category?: string; // تصنيف المخطط: شبكات، كاميرات، معماري، مواصفات
+  uploadedBy: string;
+  uploadedAt: string;
+  notes?: string;
+}
+
 export interface ProjectMilestone {
   id: string;
   title: string;
@@ -670,6 +682,7 @@ export interface Project {
   milestones?: ProjectMilestone[];
   siteLogs?: ProjectSiteLog[];
   sitePhotos?: ProjectPhoto[];
+  blueprints?: ProjectBlueprint[];
   assignedEmployees?: string[];
   createdAt: string;
   updatedAt: string;
@@ -824,4 +837,49 @@ export async function getAllJournalEntries(): Promise<JournalEntry[]> {
 export async function deleteJournalEntry(id: string): Promise<void> {
   const res = await fetch(`/api/journal/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete journal entry');
+}
+
+// ----------------------------------------------------
+// 10. Items / Price List Catalog (دليل الأصناف والأسعار)
+// ----------------------------------------------------
+export interface PriceListItem {
+  id: string;
+  category: string;
+  supplier: string;
+  description: string;
+  cost: number;
+  unitPrice: number;
+  unit: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function getAllItems(): Promise<PriceListItem[]> {
+  try {
+    const res = await fetch('/api/items', { cache: 'no-store' });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function saveItem(item: PriceListItem): Promise<void> {
+  const res = await fetch('/api/items', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(item),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'فشل حفظ الصنف في قاعدة البيانات');
+  }
+}
+
+export async function deleteItem(id: string): Promise<void> {
+  const res = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'فشل حذف الصنف');
+  }
 }

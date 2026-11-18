@@ -49,6 +49,7 @@ export function proxy(request: NextRequest) {
       pathname.startsWith('/api/receipts/') ||
       pathname.startsWith('/api/letters/') ||
       pathname.startsWith('/api/projects/') ||
+      pathname.startsWith('/api/items') ||
       pathname === '/api/settings'
     ));
 

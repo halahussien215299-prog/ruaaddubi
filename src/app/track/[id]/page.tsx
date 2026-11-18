@@ -26,7 +26,9 @@ import {
   ReceiptText,
   FileText,
   FolderOpen,
-  ExternalLink
+  ExternalLink,
+  FileCode,
+  Download
 } from "lucide-react";
 import { Project, ProjectMilestone, ProjectPhoto, getSettings } from "@/lib/db";
 
@@ -484,6 +486,87 @@ export default function ClientProjectTrackerPage({ params }: PageProps) {
             </div>
           )}
         </section>
+
+        {/* Section: Approved Blueprints & Engineering Plans (المخططات والتصاميم الهندسية المعتمدة) */}
+        {project.blueprints && project.blueprints.length > 0 && (
+          <section className="bg-white border border-slate-200/90 rounded-3xl p-6 md:p-7 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <FileCode className="w-5 h-5 text-blue-700" />
+                <h3 className="font-extrabold text-base text-slate-900">المخططات والتصاميم الهندسية المعتمدة للمشروع</h3>
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-bold font-mono">
+                  {project.blueprints.length}
+                </span>
+              </div>
+              <span className="text-xs text-slate-400">
+                المكتب الهندسي - رواد سمارت
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {project.blueprints.map((bp) => {
+                const isPdf = bp.fileType?.includes("pdf") || bp.name.toLowerCase().endsWith(".pdf") || bp.url.toLowerCase().endsWith(".pdf");
+                const isImage = bp.fileType?.includes("image") || bp.url.match(/\.(jpeg|jpg|png|webp|svg)/i);
+
+                return (
+                  <div
+                    key={bp.id}
+                    className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl flex flex-col justify-between gap-3 shadow-2xs hover:shadow-md transition"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        isPdf ? "bg-rose-50 text-rose-600 border border-rose-200" :
+                        isImage ? "bg-purple-50 text-purple-600 border border-purple-200" :
+                        "bg-blue-50 text-blue-600 border border-blue-200"
+                      }`}>
+                        {isPdf ? <FileText size={18} /> : isImage ? <Camera size={18} /> : <FileCode size={18} />}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 mb-1">
+                          {bp.category}
+                        </span>
+                        <h5 className="font-bold text-xs text-slate-900 truncate" title={bp.name}>
+                          {bp.name}
+                        </h5>
+                        {bp.notes && (
+                          <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                            {bp.notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-400">
+                      <span>{bp.uploadedAt}</span>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={bp.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                        >
+                          <Eye size={12} />
+                          <span>معاينة</span>
+                        </a>
+                        <a
+                          href={bp.url}
+                          download={bp.name}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs transition shadow-2xs"
+                          title="تحميل المخطط"
+                        >
+                          <Download size={12} />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Section: Project Invoices & Documents (الفواتير والمستندات الخاصة بالمشروع) */}
         <section className="bg-white border border-slate-200/90 rounded-3xl p-6 md:p-7 shadow-xs space-y-4">

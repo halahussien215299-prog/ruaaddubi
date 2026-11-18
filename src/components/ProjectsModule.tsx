@@ -42,13 +42,16 @@ import {
   Copy,
   Image as ImageIcon,
   UploadCloud,
-  Eye
+  Eye,
+  FileCode,
+  Download
 } from "lucide-react";
 import { 
   Project, 
   ProjectMilestone, 
   ProjectSiteLog, 
   ProjectPhoto,
+  ProjectBlueprint,
   DEFAULT_PROJECT_MILESTONES, 
   Quotation, 
   Contract, 
@@ -89,7 +92,7 @@ export default function ProjectsModule({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [dossierTab, setDossierTab] = useState<"milestones" | "financials" | "labor" | "logs" | "photos">("milestones");
+  const [dossierTab, setDossierTab] = useState<"milestones" | "financials" | "labor" | "logs" | "photos" | "blueprints">("milestones");
   const [expandedCardProjectId, setExpandedCardProjectId] = useState<string | null>(null);
 
   // Photos Tab & Live Client Tracking States
@@ -99,6 +102,15 @@ export default function ProjectsModule({
   const [uploadingManagementPhoto, setUploadingManagementPhoto] = useState(false);
   const [copiedTrackingLink, setCopiedTrackingLink] = useState(false);
   const [viewingPhotoModal, setViewingPhotoModal] = useState<ProjectPhoto | null>(null);
+
+  // Blueprints Tab States
+  const [blueprintFileBase64, setBlueprintFileBase64] = useState<string>("");
+  const [blueprintFileName, setBlueprintFileName] = useState<string>("");
+  const [blueprintFileType, setBlueprintFileType] = useState<string>("");
+  const [blueprintFileSize, setBlueprintFileSize] = useState<string>("");
+  const [blueprintCategory, setBlueprintCategory] = useState<string>("مخطط شبكات وتمديدات");
+  const [blueprintNotes, setBlueprintNotes] = useState<string>("");
+  const [uploadingBlueprint, setUploadingBlueprint] = useState(false);
 
   // Modal States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -567,6 +579,114 @@ export default function ProjectsModule({
     } catch (err) {
       console.error(err);
       alert("فشل حذف الصورة");
+    }
+  };
+
+  // Blueprint Handlers
+  const handleBlueprintFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeInKb = Math.round(file.size / 1024);
+    const sizeStr = sizeInKb > 1024 ? `${(sizeInKb / 1024).toFixed(1)} MB` : `${sizeInKb} KB`;
+
+    setBlueprintFileName(file.name.replace(/\.[^/.]+$/, ""));
+    setBlueprintFileType(file.type || file.name.split('.').pop() || "document");
+    setBlueprintFileSize(sizeStr);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setBlueprintFileBase64(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddBlueprint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProject || !blueprintFileBase64) return;
+
+    setUploadingBlueprint(true);
+    try {
+      let finalFileUrl = blueprintFileBase64;
+      try {
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            image: blueprintFileBase64, 
+            folder: "ruaad_smart/blueprints",
+            fileName: blueprintFileName || "blueprint"
+          }),
+        });
+        if (uploadRes.ok) {
+          const upJson = await uploadRes.json();
+          if (upJson.url) finalFileUrl = upJson.url;
+        }
+      } catch (upErr) {
+        console.warn("Cloudinary blueprint upload fallback:", upErr);
+      }
+
+      const newBlueprint: ProjectBlueprint = {
+        id: `bp-${Date.now()}`,
+        name: blueprintFileName.trim() || `مخطط هندسي - ${new Date().toLocaleDateString("en-GB")}`,
+        url: finalFileUrl,
+        fileType: blueprintFileType || "application/pdf",
+        fileSize: blueprintFileSize || "1.2 MB",
+        category: blueprintCategory,
+        uploadedBy: "المكتب الهندسي / رواد سمارت",
+        uploadedAt: new Date().toISOString().split("T")[0],
+        notes: blueprintNotes.trim(),
+      };
+
+      const newLog: ProjectSiteLog = {
+        id: `log-${Date.now()}`,
+        date: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("ar-AE", { hour: "2-digit", minute: "2-digit" }),
+        author: "المكتب الهندسي",
+        activity: `إرفاق مخطط هندسي جديد (${newBlueprint.name}) ضمن تصنيف: ${newBlueprint.category}`,
+      };
+
+      const updatedProject: Project = {
+        ...selectedProject,
+        blueprints: [newBlueprint, ...(selectedProject.blueprints || [])],
+        siteLogs: [newLog, ...(selectedProject.siteLogs || [])],
+        updatedAt: new Date().toISOString(),
+      };
+
+      await onSaveProject(updatedProject);
+      setSelectedProject(updatedProject);
+
+      setBlueprintFileBase64("");
+      setBlueprintFileName("");
+      setBlueprintFileType("");
+      setBlueprintFileSize("");
+      setBlueprintNotes("");
+      alert(language === "ar" ? "تم رفع المخطط الهندسي بنجاح وإضافته إلى ملف المشروع المعتمد!" : "Blueprint uploaded successfully!");
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "فشل رفع المخطط الهندسي");
+    } finally {
+      setUploadingBlueprint(false);
+    }
+  };
+
+  const handleDeleteBlueprint = async (blueprintId: string) => {
+    if (!selectedProject) return;
+    if (!confirm(language === "ar" ? "هل أنت متأكد من حذف هذا المخطط الهندسي من ملف المشروع؟" : "Delete this blueprint?")) return;
+
+    try {
+      const updatedProject: Project = {
+        ...selectedProject,
+        blueprints: (selectedProject.blueprints || []).filter(b => b.id !== blueprintId),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await onSaveProject(updatedProject);
+      setSelectedProject(updatedProject);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "فشل حذف المخطط");
     }
   };
 
@@ -1129,6 +1249,21 @@ export default function ProjectsModule({
                   {(selectedProject.sitePhotos || []).length}
                 </span>
               </button>
+
+              <button
+                onClick={() => setDossierTab("blueprints")}
+                className={`pb-3 px-3 text-xs font-bold transition flex items-center gap-1.5 border-b-2 cursor-pointer whitespace-nowrap ${
+                  dossierTab === "blueprints"
+                    ? "border-purple-600 text-purple-700"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <FileCode className="w-4 h-4" />
+                <span>{language === "ar" ? "المخططات والملفات الهندسية" : "Blueprints & Engineering Files"}</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 text-[10px] font-mono font-bold">
+                  {(selectedProject.blueprints || []).length}
+                </span>
+              </button>
             </div>
 
             {/* Content Tabs / Body */}
@@ -1604,6 +1739,231 @@ export default function ProjectsModule({
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* TAB 6: Blueprints & Engineering Files (المخططات والملفات الهندسية) */}
+              {dossierTab === "blueprints" && (
+                <div className="space-y-6">
+                  {/* Top Info Banner */}
+                  <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50/50 to-purple-50 border border-blue-150 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <FileCode className="w-5 h-5 text-blue-700" />
+                        <h4 className="font-bold text-sm text-blue-950">
+                          {language === "ar" ? "أرشيف المخططات والملفات الهندسية للمشروع" : "Project Blueprints & Engineering Files Archive"}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-blue-800/80 leading-relaxed">
+                        {language === "ar"
+                          ? "رفع وحفظ مخططات الكاميرات، التمديدات الشبكية، إنذار الحريق، والتصاميم المعمارية بصيغ PDF أو صور أو كراسات المواصفات، وتظهر للعميل في صفحة التتبع."
+                          : "Upload blueprints, cabling, CCTV layout, and specs in PDF/images. Visible to client."}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-3 py-1.5 rounded-xl bg-blue-100/80 text-blue-800 text-xs font-mono font-bold">
+                        {(selectedProject.blueprints || []).length} {language === "ar" ? "مخططات معتمدة" : "files"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Upload Blueprint Form */}
+                  <form onSubmit={handleAddBlueprint} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                    <h5 className="font-bold text-xs text-slate-800 flex items-center gap-2">
+                      <UploadCloud className="w-4 h-4 text-purple-700" />
+                      <span>{language === "ar" ? "رفع مخطط هندسي جديد للمشروع" : "Upload New Blueprint / File"}</span>
+                    </h5>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                      <div className="sm:col-span-4">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          {language === "ar" ? "تصنيف المخطط" : "Category"}
+                        </label>
+                        <select
+                          value={blueprintCategory}
+                          onChange={(e) => setBlueprintCategory(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-purple-600 cursor-pointer"
+                        >
+                          <option value="مخطط شبكات وتمديدات">مخطط شبكات وتمديدات (Network & Cabling)</option>
+                          <option value="مخطط كاميرات المراقبة">مخطط كاميرات المراقبة (CCTV Layout)</option>
+                          <option value="مخطط إنذار ومكافحة حريق">مخطط إنذار ومكافحة حريق (Fire Alarm)</option>
+                          <option value="مخطط معماري وديكور">مخطط معماري وديكور (Architectural)</option>
+                          <option value="مخطط أنظمة ذكية وتحكم">مخطط أنظمة ذكية وتحكم (Smart Home)</option>
+                          <option value="كراسة الشروط والمواصفات">كراسة الشروط والمواصفات (Specifications)</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          {language === "ar" ? "اسم / وصف المخطط" : "Blueprint Title"}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={blueprintFileName}
+                          onChange={(e) => setBlueprintFileName(e.target.value)}
+                          placeholder={language === "ar" ? "مثال: المخطط التنفيذي للطابق الأرضي - كاميرات" : "e.g. Ground Floor CCTV Layout"}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-600 font-semibold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          {language === "ar" ? "ملف المخطط (PDF / صورة / مستند)" : "File (PDF, CAD, Image)"}
+                        </label>
+                        <label className="w-full px-3 py-2 bg-white hover:bg-slate-100 border border-dashed border-purple-300 rounded-xl text-xs font-semibold text-purple-700 text-center cursor-pointer transition flex items-center justify-center gap-1.5 truncate">
+                          <UploadCloud className="w-4 h-4 text-purple-600 shrink-0" />
+                          <span className="truncate">
+                            {blueprintFileBase64 
+                              ? (blueprintFileSize ? `جاهز (${blueprintFileSize})` : "تم اختيار الملف") 
+                              : (language === "ar" ? "اختر ملف PDF أو صورة" : "Choose File")}
+                          </span>
+                          <input
+                            type="file"
+                            accept=".pdf,image/*,.dwg,.dxf,.cad,.doc,.docx"
+                            onChange={handleBlueprintFileChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={blueprintNotes}
+                          onChange={(e) => setBlueprintNotes(e.target.value)}
+                          placeholder={language === "ar" ? "ملاحظات إضافية للمهندسين أو الفنيين (اختياري)..." : "Additional engineering notes (optional)..."}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-purple-600"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={!blueprintFileBase64 || uploadingBlueprint}
+                        className="px-5 py-2 bg-purple-700 hover:bg-purple-800 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                      >
+                        {uploadingBlueprint ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>{language === "ar" ? "جاري الرفع إلى السحابة..." : "Uploading..."}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>{language === "ar" ? "إضافة المخطط للمشروع" : "Add Blueprint"}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Blueprints Grid */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <FileCode className="w-3.5 h-3.5 text-purple-600" />
+                        <span>{language === "ar" ? "المخططات الهندسية المعتمدة للمشروع" : "Approved Project Blueprints"}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-bold">
+                          {(selectedProject.blueprints || []).length}
+                        </span>
+                      </h5>
+                    </div>
+
+                    {(!selectedProject.blueprints || selectedProject.blueprints.length === 0) ? (
+                      <div className="p-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center space-y-2">
+                        <FileCode className="w-10 h-10 text-slate-300 mx-auto" />
+                        <p className="text-xs font-bold text-slate-600">
+                          {language === "ar" ? "لا توجد مخططات هندسية مرفوعة لهذا المشروع حتى الآن" : "No blueprints uploaded yet"}
+                        </p>
+                        <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                          {language === "ar"
+                            ? "يمكنك رفع ملفات الـ PDF والتصاميم الهندسية من النموذج أعلاه ليتمكن المهندسون والفنيون والعميل من الاطلاع عليها."
+                            : "Upload PDF or image blueprints above to share with technicians and client."}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {(selectedProject.blueprints || []).map((bp) => {
+                          const isPdf = bp.fileType?.includes("pdf") || bp.name.toLowerCase().endsWith(".pdf") || bp.url.toLowerCase().endsWith(".pdf");
+                          const isImage = bp.fileType?.includes("image") || bp.url.match(/\.(jpeg|jpg|png|webp|svg)/i);
+
+                          return (
+                            <div
+                              key={bp.id}
+                              className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col justify-between group"
+                            >
+                              <div className="p-4 space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                      isPdf ? "bg-rose-50 text-rose-600 border border-rose-200" :
+                                      isImage ? "bg-purple-50 text-purple-600 border border-purple-200" :
+                                      "bg-blue-50 text-blue-600 border border-blue-200"
+                                    }`}>
+                                      {isPdf ? <FileText className="w-5 h-5" /> : isImage ? <ImageIcon className="w-5 h-5" /> : <FileCode className="w-5 h-5" />}
+                                    </div>
+                                    <div>
+                                      <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                                        {bp.category}
+                                      </span>
+                                      <h6 className="font-bold text-xs text-slate-900 mt-1 line-clamp-2 leading-snug" title={bp.name}>
+                                        {bp.name}
+                                      </h6>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteBlueprint(bp.id)}
+                                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                    title={language === "ar" ? "حذف المخطط" : "Delete"}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                {bp.notes && (
+                                  <p className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-150 leading-relaxed">
+                                    {bp.notes}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+                                  <span>{bp.uploadedBy || "المكتب الهندسي"}</span>
+                                  <span className="font-mono">{bp.fileSize || bp.uploadedAt}</span>
+                                </div>
+                              </div>
+
+                              <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                                <a
+                                  href={bp.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex-1 px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>{language === "ar" ? "معاينة الملف" : "View"}</span>
+                                </a>
+
+                                <a
+                                  href={bp.url}
+                                  download={bp.name}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="p-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs transition shadow-2xs"
+                                  title={language === "ar" ? "تحميل الملف" : "Download"}
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
