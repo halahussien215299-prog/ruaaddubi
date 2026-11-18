@@ -5,14 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useForm, useFieldArray } from "react-hook-form";
-import { 
-  ArrowLeft, 
-  Save, 
-  Download, 
-  Printer, 
-  Share2, 
-  Plus, 
-  Trash2, 
+import {
+  ArrowLeft,
+  Save,
+  Download,
+  Printer,
+  Share2,
+  Plus,
+  Trash2,
   Loader2,
   FileText,
   DollarSign,
@@ -110,7 +110,7 @@ export default function QuotationEditor({ id }: QuotationEditorProps) {
           if (perms.canViewCostAndProfit !== undefined) {
             setCanViewCostAndProfit(Boolean(perms.canViewCostAndProfit));
           }
-        } catch (e) {}
+        } catch (e) { }
       } else if (activeRole === "operations") {
         setCanViewCostAndProfit(false);
       }
@@ -190,7 +190,7 @@ export default function QuotationEditor({ id }: QuotationEditorProps) {
       });
     });
   };
-  
+
   useEffect(() => {
     if (id && id !== "new" && id !== "undefined") {
       const docId = id;
@@ -316,7 +316,7 @@ export default function QuotationEditor({ id }: QuotationEditorProps) {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
-    
+
     const newInvoices: PurchaseInvoice[] = [];
     for (const file of filesArray) {
       try {
@@ -332,7 +332,7 @@ export default function QuotationEditor({ id }: QuotationEditorProps) {
         console.error("Error converting file to base64:", err);
       }
     }
-    
+
     setValue("purchaseInvoices", [...watchedInvoices, ...newInvoices]);
   };
 
@@ -343,7 +343,7 @@ export default function QuotationEditor({ id }: QuotationEditorProps) {
   const saveDocHelper = async (data: Quotation): Promise<string> => {
     const documentId = (id && id !== "new" && id !== "undefined") ? id : `quote-${Date.now()}`;
     const now = new Date().toISOString();
-    
+
     const processedItems = data.items.map(item => ({
       ...item,
       total: (item.qty || 0) * (item.unitPrice || 0)
@@ -372,8 +372,8 @@ export default function QuotationEditor({ id }: QuotationEditorProps) {
       vatRate: currentTaxRate,
       vatAmount: currentTaxAmount,
       currency: isKsa ? "SAR" : (data.currency || settings?.currency || "AED"),
-      companyTaxNumber: isKsa 
-        ? (settings?.saudiTaxNumber || "300000000000003") 
+      companyTaxNumber: isKsa
+        ? (settings?.saudiTaxNumber || "300000000000003")
         : (settings?.uaeTaxNumber || settings?.taxNumber || "100458920100003"),
       zatcaQrCode: qrCodeDataUrl || data.zatcaQrCode || "",
       clientTaxNumber: data.clientTaxNumber || "",
@@ -387,25 +387,25 @@ export default function QuotationEditor({ id }: QuotationEditorProps) {
       try {
         const existingContracts = await getAllContracts();
         const alreadyHasContract = existingContracts.some(c => c.quotationId === updatedDoc.id);
-        
+
         if (!alreadyHasContract) {
           const randomNo = "C" + String(Math.floor(Math.random() * 90000) + 10000);
-          
+
           const itemLines = updatedDoc.items.map(
             (item, i) => `${i + 1} - ${item.description.split('\n')[0]} (الكمية: ${item.qty} ${item.unit})`
           ).join('\n');
 
-          const isCctvOnly = updatedDoc.items.every(item => 
-            item.description.toLowerCase().includes('cctv') || 
-            item.description.toLowerCase().includes('camera') || 
+          const isCctvOnly = updatedDoc.items.every(item =>
+            item.description.toLowerCase().includes('cctv') ||
+            item.description.toLowerCase().includes('camera') ||
             item.description.includes('كاميرا')
           );
-          const isSmartOnly = updatedDoc.items.every(item => 
-            !item.description.toLowerCase().includes('cctv') && 
-            !item.description.toLowerCase().includes('camera') && 
+          const isSmartOnly = updatedDoc.items.every(item =>
+            !item.description.toLowerCase().includes('cctv') &&
+            !item.description.toLowerCase().includes('camera') &&
             !item.description.includes('كاميرا')
           );
-          
+
           let generatedTitle = "عقد توريد وتركيب أنظمة كاميرات مراقبة والبيت الذكي";
           if (isCctvOnly) generatedTitle = "عقد توريد وتركيب أنظمة كاميرات مراقبة";
           else if (isSmartOnly) generatedTitle = "عقد توريد وتركيب أنظمة البيت الذكي (Smart Home)";
@@ -729,7 +729,7 @@ ${itemLines}
   // Generate PDF from DOM
   const generatePDF = async (): Promise<jsPDF | null> => {
     if (!page1Ref.current) return null;
-    
+
     setExporting(true);
     document.body.classList.add("pdf-generating");
     try {
@@ -752,7 +752,7 @@ ${itemLines}
         pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
-      
+
       return pdf;
     } catch (error) {
       console.error("PDF generation failed:", error);
@@ -834,13 +834,13 @@ ${itemLines}
       alert("Could not generate PDF for sharing.");
       return;
     }
-    
+
     try {
       const qNo = watch("quotationNo") || "Document";
       const prefix = isInvoiceMode ? "Invoice" : "Quotation";
       const blob = pdf.output("blob");
       const file = new File([blob], `Ruaad_${prefix}_${qNo}.pdf`, { type: "application/pdf" });
-      
+
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -905,7 +905,7 @@ ${itemLines}
           </div>
         </div>
         {showCompany ? (
-          <div 
+          <div
             ref={companyPageRef}
             id="company-costing-page"
             dir="ltr"
@@ -917,9 +917,9 @@ ${itemLines}
               <div className="flex items-start justify-between border-b-[2px] border-zinc-200 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 flex items-center justify-center bg-white">
-                    <img 
-                      src={settings?.logoBase64 || "/logo.png"} 
-                      alt="Ruaad Logo" 
+                    <img
+                      src={settings?.logoBase64 || "/logo.png"}
+                      alt="Ruaad Logo"
                       className="max-h-full max-w-full object-contain"
                     />
                   </div>
@@ -928,7 +928,7 @@ ${itemLines}
                     <p className="text-[9px] text-zinc-500 m-0 tracking-wider">INTERNAL COSTING & PROFIT SHEET</p>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
                   <div className="bg-zinc-800 text-white px-4 py-1.5 rounded font-bold text-sm tracking-wider inline-block">
                     INTERNAL USE ONLY
@@ -964,7 +964,7 @@ ${itemLines}
                 <div className="text-center p-2">
                   <span className="font-bold text-zinc-500 block uppercase text-[8px] mb-1">Expected Profit Margin</span>
                   <span className={`font-extrabold text-sm font-mono ${profitMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                    {profitMargin.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED <br/>
+                    {profitMargin.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED <br />
                     <span className="text-[10px] opacity-80">({marginPercentage.toFixed(1)}%)</span>
                   </span>
                 </div>
@@ -992,7 +992,7 @@ ${itemLines}
                       const itemRevenue = (item.unitPrice || 0) * (item.qty || 0);
                       const itemProfit = itemRevenue - itemCost;
                       const itemProfitPercent = itemRevenue > 0 ? (itemProfit / itemRevenue) * 100 : 0;
-                      
+
                       return (
                         <tr key={item.id || idx} className="border-b border-zinc-200 hover:bg-zinc-50/25">
                           <td className="p-2 text-center border-r border-zinc-200 font-semibold text-zinc-500">{idx + 1}</td>
@@ -1048,7 +1048,7 @@ ${itemLines}
             </div>
           </div>
         ) : (
-          <div 
+          <div
             ref={page1Ref}
             id="quotation-page-1"
             dir="ltr"
@@ -1060,9 +1060,9 @@ ${itemLines}
               <div className="flex items-start justify-between border-b-[2px] border-[#581C87] pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 flex items-center justify-center bg-white">
-                    <img 
-                      src={settings?.logoBase64 || "/logo.png"} 
-                      alt="Ruaad Logo" 
+                    <img
+                      src={settings?.logoBase64 || "/logo.png"}
+                      alt="Ruaad Logo"
                       className="max-h-full max-w-full object-contain"
                     />
                   </div>
@@ -1071,20 +1071,19 @@ ${itemLines}
                     <p className="text-[8px] text-zinc-500 m-0 tracking-wider">RUAAD SMART MACHINE TRADING LLC</p>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
-                  <div className={`text-white px-3 py-1 rounded font-bold text-xs tracking-wider inline-block ${
-                    isInvoiceMode 
-                      ? (isTaxInvoice ? "bg-[#581C87]" : "bg-emerald-700") 
-                      : "bg-[#581C87]"
-                  }`}>
-                    {isInvoiceMode 
-                      ? (isTaxInvoice ? (language === "ar" ? "فاتورة ضريبية معتمدة" : "TAX INVOICE") : (language === "ar" ? "فاتورة عادية / بيان أسعار" : "STANDARD INVOICE / STATEMENT")) 
+                  <div className={`text-white px-3 py-1 rounded font-bold text-xs tracking-wider inline-block ${isInvoiceMode
+                    ? (isTaxInvoice ? "bg-[#581C87]" : "bg-emerald-700")
+                    : "bg-[#581C87]"
+                    }`}>
+                    {isInvoiceMode
+                      ? (isTaxInvoice ? (language === "ar" ? "فاتورة ضريبية معتمدة" : "TAX INVOICE") : (language === "ar" ? "فاتورة عادية / بيان أسعار" : "STANDARD INVOICE / STATEMENT"))
                       : (language === "ar" ? "عرض سعر رسمي" : "QUOTATION")}
                   </div>
                   <p className="text-[8px] text-zinc-500 mt-0.5 m-0">
-                    {isInvoiceMode 
-                      ? (isTaxInvoice ? (language === "ar" ? "خاضعة لضريبة القيمة المضافة 5%" : "Subject to 5% UAE VAT") : (language === "ar" ? "بيان حساب ومطالبة مالية" : "Statement of Account / Bill")) 
+                    {isInvoiceMode
+                      ? (isTaxInvoice ? (language === "ar" ? "خاضعة لضريبة القيمة المضافة 5%" : "Subject to 5% UAE VAT") : (language === "ar" ? "بيان حساب ومطالبة مالية" : "Statement of Account / Bill"))
                       : "Engineering & Technical Services"}
                   </p>
                 </div>
@@ -1214,8 +1213,8 @@ ${itemLines}
                         <tr className="totals-block font-bold text-zinc-750 border-t border-zinc-200" style={{ backgroundColor: "rgba(250, 250, 250, 0.5)" }}>
                           <td colSpan={3} className="p-1 border-r border-zinc-200">&nbsp;</td>
                           <td className="p-1 text-right border-r border-zinc-200 text-[#581C87] font-bold">
-                            {language === "ar" 
-                              ? (watchedTaxJurisdiction === "KSA" ? `ضريبة القيمة المضافة (15% زاتكا):` : `ضريبة القيمة المضافة (5% FTA):`) 
+                            {language === "ar"
+                              ? (watchedTaxJurisdiction === "KSA" ? `ضريبة القيمة المضافة (15% زاتكا):` : `ضريبة القيمة المضافة (5% FTA):`)
                               : `VAT (${taxRate}%):`}
                           </td>
                           <td className="p-1 text-right font-mono font-bold text-zinc-800">
@@ -1277,16 +1276,16 @@ ${itemLines}
                       <div className={`font-bold border-b border-zinc-100 pb-0.5 uppercase tracking-wider ${isInvoiceMode ? "text-[#581C87]" : "text-[#581C87]"}`}>
                         Prepared & Approved By ({formValues.companyName || "RUAAD SMART"})
                       </div>
-                      
+
                       {/* Official Stamp Overlay */}
                       <div className="absolute bottom-1 right-6 w-20 h-20 opacity-90 mix-blend-multiply pointer-events-none flex items-center justify-center -rotate-6">
-                        <img 
-                          src={settings?.stampBase64 || "/stamp.png"} 
-                          alt="Ruaad Stamp" 
+                        <img
+                          src={settings?.stampBase64 || "/stamp.png"}
+                          alt="Ruaad Stamp"
                           className="max-h-full max-w-full object-contain"
                         />
                       </div>
-                      
+
                       <div className="pt-4 text-zinc-700 space-y-0.5 relative z-10">
                         <div><span className="font-bold text-zinc-400">Name:</span> {formValues.preparedByName || "mostafa"}</div>
                         <div><span className="font-bold text-zinc-400">Date:</span> {formValues.preparedByDate}</div>
@@ -1314,7 +1313,7 @@ ${itemLines}
                       <div className={`font-bold border-b border-zinc-100 pb-0.5 uppercase tracking-wider ${isInvoiceMode ? "text-[#581C87]" : "text-[#581C87]"}`}>
                         Client Acceptance
                       </div>
-                      
+
                       <div className="border-b border-dashed border-zinc-300 w-2/3 mx-auto mt-6 mb-1" />
                       <div className="text-zinc-700 space-y-0.5 pt-1">
                         <div><span className="font-bold text-zinc-400">Name:</span> {formValues.clientAcceptanceName || "..................................................."}</div>
@@ -1385,11 +1384,11 @@ ${itemLines}
               <p className="text-xs text-slate-500 font-mono">No: {formValues.quotationNo}</p>
             </div>
           </div>
-          
+
           {/* Action buttons on very small mobile screens (hidden on md) */}
           <div className="flex md:hidden items-center gap-1.5">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               form="quotation-form"
               disabled={saving}
               className="p-2 rounded-xl bg-purple-700 hover:bg-purple-800 disabled:bg-purple-300 text-white font-medium transition-all shadow-xs"
@@ -1397,7 +1396,7 @@ ${itemLines}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             </button>
-            <button 
+            <button
               onClick={previewTab === "company-preview" ? handleDownloadCompanyPDF : handleDownloadPDF}
               disabled={exporting}
               className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 disabled:bg-slate-100 text-slate-700 font-medium transition-all shadow-2xs"
@@ -1405,7 +1404,7 @@ ${itemLines}
             >
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             </button>
-            <button 
+            <button
               onClick={handleShare}
               className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium transition-all shadow-2xs"
               title={t("share")}
@@ -1420,14 +1419,14 @@ ${itemLines}
           {/* Document Type Selector (Visible only in Client Preview mode) */}
           {previewTab === "client-preview" && (
             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-full md:w-auto justify-around md:justify-start">
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsInvoiceMode(false)}
                 className={`flex-1 md:flex-initial px-3 py-1.5 text-xs font-semibold rounded-lg text-center transition-all ${!isInvoiceMode ? "bg-white text-slate-900 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
               >
                 {t("quotationMode")}
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsInvoiceMode(true)}
                 className={`flex-1 md:flex-initial px-3 py-1.5 text-xs font-semibold rounded-lg text-center transition-all ${isInvoiceMode ? "bg-[#581C87] text-white shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
@@ -1439,14 +1438,14 @@ ${itemLines}
 
           {/* View Toggle Tabs */}
           <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-full md:w-auto justify-around md:justify-start">
-            <button 
+            <button
               type="button"
               onClick={() => setPreviewTab("edit")}
               className={`flex-1 md:flex-initial px-3.5 py-1.5 text-xs font-semibold rounded-lg text-center transition-all ${previewTab === "edit" ? "bg-white text-purple-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
             >
               {t("formTab")}
             </button>
-            <button 
+            <button
               type="button"
               onClick={() => setPreviewTab("client-preview")}
               className={`flex-1 md:flex-initial px-3.5 py-1.5 text-xs font-semibold rounded-lg text-center transition-all ${previewTab === "client-preview" ? "bg-white text-purple-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
@@ -1454,7 +1453,7 @@ ${itemLines}
               {t("clientTab")}
             </button>
             {canViewCostAndProfit && (
-              <button 
+              <button
                 type="button"
                 onClick={() => setPreviewTab("company-preview")}
                 className={`flex-1 md:flex-initial px-3.5 py-1.5 text-xs font-semibold rounded-lg text-center transition-all ${previewTab === "company-preview" ? "bg-white text-purple-700 shadow-2xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
@@ -1466,8 +1465,8 @@ ${itemLines}
 
           {/* Desktop/Tablet Action Buttons (hidden on mobile) */}
           <div className="hidden md:flex items-center gap-2">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               form="quotation-form"
               disabled={saving}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 disabled:bg-purple-300 text-white font-bold text-xs transition-all hover:scale-[1.02] shadow-xs"
@@ -1475,7 +1474,7 @@ ${itemLines}
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               {t("saveBtn")}
             </button>
-            <button 
+            <button
               onClick={previewTab === "company-preview" ? handleDownloadCompanyPDF : handleDownloadPDF}
               disabled={exporting}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 disabled:bg-slate-100 text-slate-700 font-semibold text-xs transition-all shadow-2xs"
@@ -1483,14 +1482,14 @@ ${itemLines}
               {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
               {t("downloadPdf")}
             </button>
-            <button 
+            <button
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-2xs"
             >
               <Printer className="w-3.5 h-3.5" />
               {t("print")}
             </button>
-            <button 
+            <button
               onClick={handleShare}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-2xs"
             >
@@ -1506,49 +1505,49 @@ ${itemLines}
         {/* Left Side: Editor Form */}
         <div className={`flex-1 overflow-y-auto p-6 md:p-8 no-print bg-slate-100/60 ${previewTab !== "edit" ? "hidden" : "block"}`}>
           <form id="quotation-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
-            
+
             {/* Quotation Metadata Card */}
             <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
               <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">{t("docDetails")}</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("quoteNo")}</label>
-                  <input 
-                    type="text" 
-                    {...register("quotationNo", { required: true })} 
+                  <input
+                    type="text"
+                    {...register("quotationNo", { required: true })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("preparedBy")}</label>
-                  <input 
-                    type="text" 
-                    {...register("preparedBy", { required: true })} 
+                  <input
+                    type="text"
+                    {...register("preparedBy", { required: true })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("date")}</label>
-                  <input 
-                    type="text" 
-                    {...register("date", { required: true })} 
+                  <input
+                    type="text"
+                    {...register("date", { required: true })}
                     placeholder="DD/MM/YYYY"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("validUntil")}</label>
-                  <input 
-                    type="text" 
-                    {...register("validUntil", { required: true })} 
+                  <input
+                    type="text"
+                    {...register("validUntil", { required: true })}
                     placeholder="DD/MM/YYYY"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("status")}</label>
-                  <select 
-                    {...register("status")} 
+                  <select
+                    {...register("status")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   >
                     <option value="pending">{t("statusPending")}</option>
@@ -1561,10 +1560,10 @@ ${itemLines}
               </div>
             </div>
 
-             {/* Client Info Card */}
+            {/* Client Info Card */}
             <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
               <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">{t("clientInfo")}</h2>
-              
+
               <div className="space-y-4 pb-3 border-b border-slate-100">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -1598,11 +1597,10 @@ ${itemLines}
                             setValue("currency", "AED");
                             setValue("vatRate", 5);
                           }}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${
-                            watchedTaxJurisdiction === "UAE"
-                              ? "bg-blue-50 text-blue-900 border-blue-400 ring-2 ring-blue-100"
-                              : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-white"
-                          }`}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${watchedTaxJurisdiction === "UAE"
+                            ? "bg-blue-50 text-blue-900 border-blue-400 ring-2 ring-blue-100"
+                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-white"
+                            }`}
                         >
                           <span>🇦🇪</span>
                           <span>{language === "ar" ? "الإمارات (5% FTA)" : "UAE (5%)"}</span>
@@ -1615,11 +1613,10 @@ ${itemLines}
                             setValue("currency", "SAR");
                             setValue("vatRate", 15);
                           }}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${
-                            watchedTaxJurisdiction === "KSA"
-                              ? "bg-emerald-50 text-emerald-900 border-emerald-400 ring-2 ring-emerald-100"
-                              : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-white"
-                          }`}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border ${watchedTaxJurisdiction === "KSA"
+                            ? "bg-emerald-50 text-emerald-900 border-emerald-400 ring-2 ring-emerald-100"
+                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-white"
+                            }`}
                         >
                           <span>🇸🇦</span>
                           <span>{language === "ar" ? "السعودية (15% زاتكا)" : "KSA (15%)"}</span>
@@ -1641,9 +1638,9 @@ ${itemLines}
                         {watchedTaxJurisdiction === "KSA" ? "15 رقماً تبدأ وتنتهي بـ 3" : "15 رقماً تبدأ بـ 100"}
                       </span>
                     </label>
-                    <input 
-                      type="text" 
-                      {...register("clientTaxNumber")} 
+                    <input
+                      type="text"
+                      {...register("clientTaxNumber")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all font-mono"
                       placeholder={watchedTaxJurisdiction === "KSA" ? "300xxxxxxxxxxxx" : "100xxxxxxxxxxxx"}
                     />
@@ -1654,9 +1651,9 @@ ${itemLines}
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("clientName")}</label>
-                  <input 
-                    type="text" 
-                    {...register("clientName", { required: true })} 
+                  <input
+                    type="text"
+                    {...register("clientName", { required: true })}
                     placeholder="e.g. Client / Project Owner Name"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
@@ -1664,18 +1661,18 @@ ${itemLines}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("contactNo")}</label>
-                    <input 
-                      type="text" 
-                      {...register("contactNo")} 
+                    <input
+                      type="text"
+                      {...register("contactNo")}
                       placeholder="e.g. +971 50..."
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("email")}</label>
-                    <input 
-                      type="text" 
-                      {...register("email")} 
+                    <input
+                      type="text"
+                      {...register("email")}
                       placeholder="e.g. info@client.com"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
@@ -1684,18 +1681,18 @@ ${itemLines}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("locationArea")}</label>
-                    <input 
-                      type="text" 
-                      {...register("locationArea")} 
+                    <input
+                      type="text"
+                      {...register("locationArea")}
                       placeholder="e.g. Dubai Marina"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("projectRef")}</label>
-                    <input 
-                      type="text" 
-                      {...register("projectReference")} 
+                    <input
+                      type="text"
+                      {...register("projectReference")}
                       placeholder="e.g. Villa Automation"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
@@ -1748,12 +1745,12 @@ ${itemLines}
                       </button>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                       {t("description")} #{index + 1}
                     </label>
-                    <textarea 
+                    <textarea
                       {...register(`items.${index}.description` as const, { required: true })}
                       rows={3}
                       className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none leading-normal font-mono"
@@ -1763,8 +1760,8 @@ ${itemLines}
                   <div className={`grid grid-cols-2 ${canViewCostAndProfit ? "sm:grid-cols-4" : "sm:grid-cols-3"} gap-3`}>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t("qty")}</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="any"
                         {...register(`items.${index}.qty` as const, { required: true, valueAsNumber: true })}
                         className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 focus:border-purple-600 outline-none"
@@ -1772,16 +1769,16 @@ ${itemLines}
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t("unit")}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register(`items.${index}.unit` as const)}
                         className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 focus:border-purple-600 outline-none"
                       />
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t("unitPrice")}</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="any"
                         {...register(`items.${index}.unitPrice` as const, { required: true, valueAsNumber: true })}
                         className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 focus:border-purple-600 outline-none font-mono"
@@ -1790,8 +1787,8 @@ ${itemLines}
                     {canViewCostAndProfit && (
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t("costPerUnit")}</label>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           step="any"
                           {...register(`items.${index}.cost` as const, { valueAsNumber: true })}
                           className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-900 focus:border-purple-600 outline-none font-mono"
@@ -1809,8 +1806,8 @@ ${itemLines}
                     <Percent className="w-4 h-4 text-slate-400" />
                     <label className="text-xs font-semibold text-slate-600">{t("discount")}</label>
                   </div>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     step="any"
                     {...register("discount")}
                     className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-right text-slate-900 focus:bg-white focus:border-purple-600 outline-none font-mono font-bold"
@@ -1847,7 +1844,7 @@ ${itemLines}
                 <Paperclip className="w-4 h-4 text-purple-600" />
                 {t("attachInvoices")}
               </h2>
-              
+
               <div className="space-y-4">
                 {/* Upload Button */}
                 <div className="flex items-center justify-center w-full">
@@ -1857,12 +1854,12 @@ ${itemLines}
                       <p className="text-xs text-slate-600 font-bold">{t("uploadInvoiceBtn")}</p>
                       <p className="text-[10px] text-slate-400 mt-0.5">PDF, PNG, JPG up to 5MB</p>
                     </div>
-                    <input 
-                      type="file" 
-                      id="invoice-upload" 
-                      multiple 
-                      accept="image/*,application/pdf" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      id="invoice-upload"
+                      multiple
+                      accept="image/*,application/pdf"
+                      className="hidden"
                       onChange={handleFileUpload}
                     />
                   </label>
@@ -1911,17 +1908,17 @@ ${itemLines}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("paymentTerms")}</label>
-                  <input 
-                    type="text" 
-                    {...register("paymentTerms")} 
+                  <input
+                    type="text"
+                    {...register("paymentTerms")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("termsLink")}</label>
-                  <input 
-                    type="text" 
-                    {...register("termsConditions")} 
+                  <input
+                    type="text"
+                    {...register("termsConditions")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
@@ -1929,17 +1926,17 @@ ${itemLines}
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("preparedByName")}</label>
-                  <input 
-                    type="text" 
-                    {...register("preparedByName")} 
+                  <input
+                    type="text"
+                    {...register("preparedByName")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("preparedByDate")}</label>
-                  <input 
-                    type="text" 
-                    {...register("preparedByDate")} 
+                  <input
+                    type="text"
+                    {...register("preparedByDate")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
@@ -1953,60 +1950,60 @@ ${itemLines}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("companyName")}</label>
-                    <input 
-                      type="text" 
-                      {...register("companyName")} 
+                    <input
+                      type="text"
+                      {...register("companyName")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("bankName")}</label>
-                    <input 
-                      type="text" 
-                      {...register("bankName")} 
+                    <input
+                      type="text"
+                      {...register("bankName")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("iban")}</label>
-                  <input 
-                    type="text" 
-                    {...register("bankIban")} 
+                  <input
+                    type="text"
+                    {...register("bankIban")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">BIC / Swift</label>
-                    <input 
-                      type="text" 
-                      {...register("bankBic")} 
+                    <input
+                      type="text"
+                      {...register("bankBic")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Bank Address</label>
-                    <input 
-                      type="text" 
-                      {...register("bankAddress")} 
+                    <input
+                      type="text"
+                      {...register("bankAddress")}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("companyAddress")}</label>
-                  <input 
-                    type="text" 
-                    {...register("companyAddress")} 
+                  <input
+                    type="text"
+                    {...register("companyAddress")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{t("companyEmail")}</label>
-                  <input 
-                    type="text" 
-                    {...register("companyEmail")} 
+                  <input
+                    type="text"
+                    {...register("companyEmail")}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-purple-600 focus:ring-2 focus:ring-purple-100 outline-none transition-all"
                   />
                 </div>
@@ -2016,18 +2013,16 @@ ${itemLines}
         </div>
 
         {/* Right Side: A4 Live Preview Sheets (Client) */}
-        <div className={`bg-slate-200/80 overflow-y-auto p-8 flex flex-col items-center gap-8 border-l border-slate-300 ${
-          previewTab === "company-preview" ? "no-print" : "print-area printable-area"
-        } ${
-          previewTab === "edit" 
-            ? "hidden lg:flex lg:w-[48%] xl:w-[45%]" 
-            : previewTab === "client-preview" 
-              ? "flex-1 flex" 
+        <div className={`bg-slate-200/80 overflow-y-auto p-8 flex flex-col items-center gap-8 border-l border-slate-300 ${previewTab === "company-preview" ? "no-print" : "print-area printable-area"
+          } ${previewTab === "edit"
+            ? "hidden lg:flex lg:w-[48%] xl:w-[45%]"
+            : previewTab === "client-preview"
+              ? "flex-1 flex"
               : "hidden"
-        }`}>
-          
+          }`}>
+
           {/* SINGLE DYNAMIC CONTINUOUS SHEET (A4 MIN HEIGHT) */}
-          <div 
+          <div
             ref={page1Ref}
             id="quotation-page-1"
             dir="ltr"
@@ -2039,9 +2034,9 @@ ${itemLines}
               <div className="flex items-start justify-between border-b-[2px] border-[#581C87] pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 flex items-center justify-center bg-white">
-                    <img 
-                      src={settings?.logoBase64 || "/logo.png"} 
-                      alt="Ruaad Logo" 
+                    <img
+                      src={settings?.logoBase64 || "/logo.png"}
+                      alt="Ruaad Logo"
                       className="max-h-full max-w-full object-contain"
                     />
                   </div>
@@ -2050,7 +2045,7 @@ ${itemLines}
                     <p className="text-[8px] text-zinc-500 m-0 tracking-wider">RUAAD SMART MACHINE TRADING LLC</p>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
                   <div className={`text-white px-3 py-1 rounded font-bold text-xs tracking-wider inline-block ${isInvoiceMode ? "bg-[#581C87]" : "bg-[#581C87]"}`}>
                     {isInvoiceMode ? t("invoiceTitle") : "QUOTATION"}
@@ -2209,16 +2204,16 @@ ${itemLines}
                       <div className={`font-bold border-b border-zinc-100 pb-0.5 uppercase tracking-wider ${isInvoiceMode ? "text-[#581C87]" : "text-[#581C87]"}`}>
                         Prepared & Approved By (رواد سمارت)
                       </div>
-                      
+
                       {/* Official Stamp Overlay */}
                       <div className="absolute bottom-1 right-6 w-20 h-20 opacity-90 mix-blend-multiply pointer-events-none flex items-center justify-center -rotate-6">
-                        <img 
-                          src={settings?.stampBase64 || "/stamp.png"} 
-                          alt="Ruaad Stamp" 
+                        <img
+                          src={settings?.stampBase64 || "/stamp.png"}
+                          alt="Ruaad Stamp"
                           className="max-h-full max-w-full object-contain"
                         />
                       </div>
-                      
+
                       <div className="pt-4 text-zinc-700 space-y-0.5 relative z-10">
                         <div><span className="font-bold text-zinc-400">Name:</span> {formValues.preparedByName || "mostafa"}</div>
                         <div><span className="font-bold text-zinc-400">Date:</span> {formValues.preparedByDate}</div>
@@ -2229,7 +2224,7 @@ ${itemLines}
                       <div className={`font-bold border-b border-zinc-100 pb-0.5 uppercase tracking-wider ${isInvoiceMode ? "text-[#581C87]" : "text-[#581C87]"}`}>
                         Client Acceptance
                       </div>
-                      
+
                       <div className="border-b border-dashed border-zinc-300 w-2/3 mx-auto mt-6 mb-1" />
                       <div className="text-zinc-700 space-y-0.5 pt-1">
                         <div><span className="font-bold text-zinc-400">Name:</span> {formValues.clientAcceptanceName || "..................................................."}</div>
@@ -2283,154 +2278,152 @@ ${itemLines}
 
         {/* PAGE 3: COMPANY INTERNAL COSTING SHEET */}
         {canViewCostAndProfit && (
-        <div className={`bg-slate-200/80 overflow-y-auto p-8 flex flex-col items-center gap-8 border-l border-slate-300 ${
-          previewTab === "company-preview" ? "print-area printable-area" : "no-print"
-        } ${
-          previewTab === "company-preview" ? "flex-1 flex" : "hidden"
-        }`}>
-          <div 
-            ref={companyPageRef}
-            id="company-costing-page"
-            dir="ltr"
-            className="w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] bg-white text-zinc-900 shadow-2xl p-[15mm] flex flex-col gap-6 relative text-xs select-none text-left"
-            style={{ boxSizing: "border-box", direction: "ltr" }}
-          >
-            <div>
-              {/* Document Header */}
-              <div className="flex items-start justify-between border-b-[2px] border-zinc-200 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 flex items-center justify-center bg-white">
-                    <img 
-                      src={settings?.logoBase64 || "/logo.png"} 
-                      alt="Ruaad Logo" 
-                      className="max-h-full max-w-full object-contain"
-                    />
+          <div className={`bg-slate-200/80 overflow-y-auto p-8 flex flex-col items-center gap-8 border-l border-slate-300 ${previewTab === "company-preview" ? "print-area printable-area" : "no-print"
+            } ${previewTab === "company-preview" ? "flex-1 flex" : "hidden"
+            }`}>
+            <div
+              ref={companyPageRef}
+              id="company-costing-page"
+              dir="ltr"
+              className="w-[210mm] h-[297mm] min-w-[210mm] min-h-[297mm] bg-white text-zinc-900 shadow-2xl p-[15mm] flex flex-col gap-6 relative text-xs select-none text-left"
+              style={{ boxSizing: "border-box", direction: "ltr" }}
+            >
+              <div>
+                {/* Document Header */}
+                <div className="flex items-start justify-between border-b-[2px] border-zinc-200 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 flex items-center justify-center bg-white">
+                      <img
+                        src={settings?.logoBase64 || "/logo.png"}
+                        alt="Ruaad Logo"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-[#581C87] font-sans m-0 leading-tight">RUAAD SMART</h2>
+                      <p className="text-[9px] text-zinc-500 m-0 tracking-wider">INTERNAL COSTING & PROFIT SHEET</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-base font-bold text-[#581C87] font-sans m-0 leading-tight">RUAAD SMART</h2>
-                    <p className="text-[9px] text-zinc-500 m-0 tracking-wider">INTERNAL COSTING & PROFIT SHEET</p>
+
+                  <div className="text-right">
+                    <div className="bg-zinc-800 text-white px-4 py-1.5 rounded font-bold text-sm tracking-wider inline-block">
+                      INTERNAL USE ONLY
+                    </div>
+                    <p className="text-[9px] text-red-500 font-bold mt-1 m-0">سند التكاليف والأرباح الداخلية للشركة</p>
                   </div>
                 </div>
-                
-                <div className="text-right">
-                  <div className="bg-zinc-800 text-white px-4 py-1.5 rounded font-bold text-sm tracking-wider inline-block">
-                    INTERNAL USE ONLY
+
+                {/* Quotation Identity Info */}
+                <div className="grid grid-cols-4 border border-zinc-200 mt-4 text-[10px]">
+                  <div className="bg-zinc-50 p-2 font-bold border-r border-b border-zinc-200 text-[#581C87]">Quotation No.</div>
+                  <div className="p-2 border-r border-b border-zinc-200 font-mono font-bold text-zinc-700">{formValues.quotationNo}</div>
+                  <div className="bg-zinc-50 p-2 font-bold border-r border-b border-zinc-200 text-[#581C87]">Date</div>
+                  <div className="p-2 border-b border-zinc-200 text-zinc-700">{formValues.date}</div>
+
+                  <div className="bg-zinc-50 p-2 font-bold border-r border-zinc-200 text-[#581C87]">Client Name</div>
+                  <div className="p-2 border-r border-zinc-200 text-zinc-800 font-semibold col-span-3">{formValues.clientName || "-"}</div>
+                </div>
+
+                {/* Cost & Profit Margin Analysis Card */}
+                <div className="mt-4 grid grid-cols-3 gap-4 border border-zinc-200 rounded-lg p-4" style={{ backgroundColor: "rgba(250, 250, 250, 0.5)" }}>
+                  <div className="text-center p-2 border-r border-zinc-200">
+                    <span className="font-bold text-zinc-500 block uppercase text-[8px] mb-1">Total Client Price (Revenue)</span>
+                    <span className="text-zinc-900 font-extrabold text-sm font-mono">{totalRevenue.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED</span>
+                    {watchedDiscount > 0 && (
+                      <span className="block text-[7px] text-zinc-400 font-bold mt-0.5">(Discount: {watchedDiscount}% / -{(subtotal * (watchedDiscount / 100)).toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED)</span>
+                    )}
                   </div>
-                  <p className="text-[9px] text-red-500 font-bold mt-1 m-0">سند التكاليف والأرباح الداخلية للشركة</p>
+                  <div className="text-center p-2 border-r border-zinc-200">
+                    <span className="font-bold text-zinc-500 block uppercase text-[8px] mb-1">Total Cost Price</span>
+                    <span className="text-zinc-900 font-extrabold text-sm font-mono">{totalCost.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED</span>
+                  </div>
+                  <div className="text-center p-2">
+                    <span className="font-bold text-zinc-500 block uppercase text-[8px] mb-1">Expected Profit Margin</span>
+                    <span className={`font-extrabold text-sm font-mono ${profitMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                      {profitMargin.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED <br />
+                      <span className="text-[10px] opacity-80">({marginPercentage.toFixed(1)}%)</span>
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Quotation Identity Info */}
-              <div className="grid grid-cols-4 border border-zinc-200 mt-4 text-[10px]">
-                <div className="bg-zinc-50 p-2 font-bold border-r border-b border-zinc-200 text-[#581C87]">Quotation No.</div>
-                <div className="p-2 border-r border-b border-zinc-200 font-mono font-bold text-zinc-700">{formValues.quotationNo}</div>
-                <div className="bg-zinc-50 p-2 font-bold border-r border-b border-zinc-200 text-[#581C87]">Date</div>
-                <div className="p-2 border-b border-zinc-200 text-zinc-700">{formValues.date}</div>
-
-                <div className="bg-zinc-50 p-2 font-bold border-r border-zinc-200 text-[#581C87]">Client Name</div>
-                <div className="p-2 border-r border-zinc-200 text-zinc-800 font-semibold col-span-3">{formValues.clientName || "-"}</div>
-              </div>
-
-              {/* Cost & Profit Margin Analysis Card */}
-              <div className="mt-4 grid grid-cols-3 gap-4 border border-zinc-200 rounded-lg p-4" style={{ backgroundColor: "rgba(250, 250, 250, 0.5)" }}>
-                <div className="text-center p-2 border-r border-zinc-200">
-                  <span className="font-bold text-zinc-500 block uppercase text-[8px] mb-1">Total Client Price (Revenue)</span>
-                  <span className="text-zinc-900 font-extrabold text-sm font-mono">{totalRevenue.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED</span>
-                  {watchedDiscount > 0 && (
-                    <span className="block text-[7px] text-zinc-400 font-bold mt-0.5">(Discount: {watchedDiscount}% / -{(subtotal * (watchedDiscount / 100)).toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED)</span>
-                  )}
-                </div>
-                <div className="text-center p-2 border-r border-zinc-200">
-                  <span className="font-bold text-zinc-500 block uppercase text-[8px] mb-1">Total Cost Price</span>
-                  <span className="text-zinc-900 font-extrabold text-sm font-mono">{totalCost.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED</span>
-                </div>
-                <div className="text-center p-2">
-                  <span className="font-bold text-zinc-500 block uppercase text-[8px] mb-1">Expected Profit Margin</span>
-                  <span className={`font-extrabold text-sm font-mono ${profitMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                    {profitMargin.toLocaleString("en-AE", { minimumFractionDigits: 2 })} AED <br/>
-                    <span className="text-[10px] opacity-80">({marginPercentage.toFixed(1)}%)</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Cost Breakdown Table */}
-              <div className="mt-4">
-                <p className="font-bold text-zinc-800 mb-2 text-[10px] uppercase tracking-wider">Cost breakdown per line item:</p>
-                <table className="w-full border border-zinc-200 text-[9px] text-left border-collapse">
-                  <thead>
-                    <tr className="bg-zinc-800 text-white font-bold text-[9px]">
-                      <th className="p-2 w-8 text-center border-r border-zinc-700 font-bold">#</th>
-                      <th className="p-2 border-r border-zinc-700 font-bold">Description</th>
-                      <th className="p-2 w-12 text-center border-r border-zinc-700 font-bold">Qty</th>
-                      <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Unit Cost (AED)</th>
-                      <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Total Cost (AED)</th>
-                      <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Unit Price (AED)</th>
-                      <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Total Price (AED)</th>
-                      <th className="p-2 w-20 text-right font-bold">Profit Margin</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formValues.items.map((item, idx) => {
-                      const itemCost = (item.cost || 0) * (item.qty || 0);
-                      const itemRevenue = (item.unitPrice || 0) * (item.qty || 0);
-                      const itemProfit = itemRevenue - itemCost;
-                      const itemProfitPercent = itemRevenue > 0 ? (itemProfit / itemRevenue) * 100 : 0;
-                      
-                      return (
-                        <tr key={item.id || idx} className="border-b border-zinc-200 hover:bg-zinc-50/25">
-                          <td className="p-2 text-center border-r border-zinc-200 font-semibold text-zinc-500">{idx + 1}</td>
-                          <td className="p-2 border-r border-zinc-200 text-zinc-800 leading-normal truncate max-w-[150px]">
-                            {item.description ? item.description.split("\n")[0] : "-"}
-                          </td>
-                          <td className="p-2 text-center border-r border-zinc-200 text-zinc-700">{item.qty || 0}</td>
-                          <td className="p-2 text-right border-r border-zinc-200 text-zinc-600 font-mono">{(item.cost || 0).toLocaleString()}</td>
-                          <td className="p-2 text-right border-r border-zinc-200 text-zinc-700 font-mono">{itemCost.toLocaleString()}</td>
-                          <td className="p-2 text-right border-r border-zinc-200 text-zinc-600 font-mono">{(item.unitPrice || 0).toLocaleString()}</td>
-                          <td className="p-2 text-right border-r border-zinc-200 text-zinc-700 font-mono">{itemRevenue.toLocaleString()}</td>
-                          <td className={`p-2 text-right font-bold font-mono ${itemProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                            {itemProfit.toLocaleString()} <span className="text-[8px] font-normal">({itemProfitPercent.toFixed(0)}%)</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Attached Invoices */}
-              {watchedInvoices.length > 0 && (
+                {/* Cost Breakdown Table */}
                 <div className="mt-4">
-                  <p className="font-bold text-zinc-800 mb-2 text-[10px] uppercase tracking-wider">Attached Purchase Invoices / فواتير الشراء المرفقة:</p>
+                  <p className="font-bold text-zinc-800 mb-2 text-[10px] uppercase tracking-wider">Cost breakdown per line item:</p>
                   <table className="w-full border border-zinc-200 text-[9px] text-left border-collapse">
                     <thead>
-                      <tr className="bg-zinc-100 text-zinc-700 font-bold">
-                        <th className="p-2 border-r border-zinc-200 font-bold">Invoice File Name</th>
-                        <th className="p-2 border-r border-zinc-200 text-center font-bold">Type</th>
-                        <th className="p-2 text-center font-bold">Uploaded At</th>
+                      <tr className="bg-zinc-800 text-white font-bold text-[9px]">
+                        <th className="p-2 w-8 text-center border-r border-zinc-700 font-bold">#</th>
+                        <th className="p-2 border-r border-zinc-700 font-bold">Description</th>
+                        <th className="p-2 w-12 text-center border-r border-zinc-700 font-bold">Qty</th>
+                        <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Unit Cost (AED)</th>
+                        <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Total Cost (AED)</th>
+                        <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Unit Price (AED)</th>
+                        <th className="p-2 w-20 text-right border-r border-zinc-700 font-bold">Total Price (AED)</th>
+                        <th className="p-2 w-20 text-right font-bold">Profit Margin</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {watchedInvoices.map((inv) => (
-                        <tr key={inv.id} className="border-b border-zinc-200">
-                          <td className="p-2 border-r border-zinc-200 font-medium text-zinc-800">{inv.name}</td>
-                          <td className="p-2 border-r border-zinc-200 text-center text-zinc-500">{inv.fileType.split("/")[1]?.toUpperCase() || "PDF"}</td>
-                          <td className="p-2 text-center text-zinc-500">{inv.uploadedAt}</td>
-                        </tr>
-                      ))}
+                      {formValues.items.map((item, idx) => {
+                        const itemCost = (item.cost || 0) * (item.qty || 0);
+                        const itemRevenue = (item.unitPrice || 0) * (item.qty || 0);
+                        const itemProfit = itemRevenue - itemCost;
+                        const itemProfitPercent = itemRevenue > 0 ? (itemProfit / itemRevenue) * 100 : 0;
+
+                        return (
+                          <tr key={item.id || idx} className="border-b border-zinc-200 hover:bg-zinc-50/25">
+                            <td className="p-2 text-center border-r border-zinc-200 font-semibold text-zinc-500">{idx + 1}</td>
+                            <td className="p-2 border-r border-zinc-200 text-zinc-800 leading-normal truncate max-w-[150px]">
+                              {item.description ? item.description.split("\n")[0] : "-"}
+                            </td>
+                            <td className="p-2 text-center border-r border-zinc-200 text-zinc-700">{item.qty || 0}</td>
+                            <td className="p-2 text-right border-r border-zinc-200 text-zinc-600 font-mono">{(item.cost || 0).toLocaleString()}</td>
+                            <td className="p-2 text-right border-r border-zinc-200 text-zinc-700 font-mono">{itemCost.toLocaleString()}</td>
+                            <td className="p-2 text-right border-r border-zinc-200 text-zinc-600 font-mono">{(item.unitPrice || 0).toLocaleString()}</td>
+                            <td className="p-2 text-right border-r border-zinc-200 text-zinc-700 font-mono">{itemRevenue.toLocaleString()}</td>
+                            <td className={`p-2 text-right font-bold font-mono ${itemProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                              {itemProfit.toLocaleString()} <span className="text-[8px] font-normal">({itemProfitPercent.toFixed(0)}%)</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </div>
 
-            {/* Verification Footer Statement */}
-            <div className="border-t border-zinc-200 pt-4 text-center">
-              <p className="italic text-zinc-400 text-[8px] m-0">
-                Confidential Document. For internal accounting and profit audit purposes only.
-              </p>
+                {/* Attached Invoices */}
+                {watchedInvoices.length > 0 && (
+                  <div className="mt-4">
+                    <p className="font-bold text-zinc-800 mb-2 text-[10px] uppercase tracking-wider">Attached Purchase Invoices / فواتير الشراء المرفقة:</p>
+                    <table className="w-full border border-zinc-200 text-[9px] text-left border-collapse">
+                      <thead>
+                        <tr className="bg-zinc-100 text-zinc-700 font-bold">
+                          <th className="p-2 border-r border-zinc-200 font-bold">Invoice File Name</th>
+                          <th className="p-2 border-r border-zinc-200 text-center font-bold">Type</th>
+                          <th className="p-2 text-center font-bold">Uploaded At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {watchedInvoices.map((inv) => (
+                          <tr key={inv.id} className="border-b border-zinc-200">
+                            <td className="p-2 border-r border-zinc-200 font-medium text-zinc-800">{inv.name}</td>
+                            <td className="p-2 border-r border-zinc-200 text-center text-zinc-500">{inv.fileType.split("/")[1]?.toUpperCase() || "PDF"}</td>
+                            <td className="p-2 text-center text-zinc-500">{inv.uploadedAt}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Verification Footer Statement */}
+              <div className="border-t border-zinc-200 pt-4 text-center">
+                <p className="italic text-zinc-400 text-[8px] m-0">
+                  Confidential Document. For internal accounting and profit audit purposes only.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
         )}
 
       </div>
@@ -2444,7 +2437,7 @@ ${itemLines}
                 <FileText className="w-5 h-5 text-purple-700" />
                 <h3 className="text-sm font-semibold truncate max-w-md">{viewInvoice.name}</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setViewInvoice(null)}
                 className="p-1 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all"
               >
@@ -2455,15 +2448,15 @@ ${itemLines}
               {viewInvoice.fileType.startsWith("image/") ? (
                 <div className="relative w-full h-full flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={viewInvoice.fileData} 
-                    alt={viewInvoice.name} 
+                  <img
+                    src={viewInvoice.fileData}
+                    alt={viewInvoice.name}
                     className="max-w-full max-h-full object-contain rounded"
                   />
                 </div>
               ) : (
-                <iframe 
-                  src={viewInvoice.fileData} 
+                <iframe
+                  src={viewInvoice.fileData}
                   title={viewInvoice.name}
                   className="w-full h-full border-0 rounded"
                 />

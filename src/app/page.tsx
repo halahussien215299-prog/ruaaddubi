@@ -40,7 +40,9 @@ import {
   BadgeCheck,
   Crown,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  ChevronDown,
+  Sparkles
 } from "lucide-react";
 import {
   getAllQuotations,
@@ -141,7 +143,12 @@ export default function Dashboard() {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
 
-  const [mainModule, setMainModule] = useState<"contracts" | "accounting" | "hr" | "projects" | "reports">("contracts");
+  type MainModule = "overview" | "projects" | "sales" | "contracts" | "accounting" | "hr" | "reports";
+  const [mainModule, setMainModule] = useState<MainModule>("overview");
+  const [salesSubTab, setSalesSubTab] = useState<"quotations" | "priceList">("quotations");
+  const [contractsSubTab, setContractsSubTab] = useState<"contracts" | "certificates" | "letters">("contracts");
+  const [quotationFilterStatus, setQuotationFilterStatus] = useState<string>("all");
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [statusChanging, setStatusChanging] = useState<string | null>(null);
@@ -701,18 +708,45 @@ export default function Dashboard() {
 
   const mainModulesList = [
     {
-      id: "contracts" as const,
-      label: language === "ar" ? "العقود والعمليات" : "Contracts & Ops",
-      fullLabel: language === "ar" ? "إدارة العقود والعمليات والمستندات" : "Contracts & Operations Management",
-      icon: ScrollText,
-      badge: quotations.length + contracts.length,
+      id: "overview" as const,
+      label: language === "ar" ? "لوحة المؤشرات" : "Dashboard",
+      fullLabel: language === "ar" ? "لوحة القيادة والمؤشرات العامة" : "Command Center & Overview",
+      icon: LayoutDashboard,
+      badge: null,
       color: "text-purple-600",
       activeBg: "bg-purple-700 text-white shadow-xs"
     },
     {
+      id: "projects" as const,
+      label: language === "ar" ? "المشاريع الميدانية" : "Field Projects",
+      fullLabel: language === "ar" ? "إدارة المشاريع والمواقع والمخططات الهندسية" : "Projects, Blueprints & Field Tracking",
+      icon: Building2,
+      badge: projects.length,
+      color: "text-amber-600",
+      activeBg: "bg-amber-600 text-white shadow-xs"
+    },
+    {
+      id: "sales" as const,
+      label: language === "ar" ? "عروض الأسعار والكتالوج" : "Quotes & Catalog",
+      fullLabel: language === "ar" ? "إدارة عروض الأسعار ودليل الأصناف المعتمدة" : "Quotations & Catalog Price List",
+      icon: FileText,
+      badge: quotations.length,
+      color: "text-purple-600",
+      activeBg: "bg-purple-700 text-white shadow-xs"
+    },
+    {
+      id: "contracts" as const,
+      label: language === "ar" ? "العقود والمستندات" : "Contracts & Docs",
+      fullLabel: language === "ar" ? "العقود الرسمية، شهادات الإنجاز والخطابات" : "Contracts, Certificates & Letters",
+      icon: ScrollText,
+      badge: contracts.length + certificates.length,
+      color: "text-blue-600",
+      activeBg: "bg-blue-600 text-white shadow-xs"
+    },
+    {
       id: "accounting" as const,
-      label: language === "ar" ? "المحاسبة والمالية" : "Accounting & Finance",
-      fullLabel: language === "ar" ? "المحاسبة والمالية وسندات الصرف والقبض" : "Accounting & Financial Vouchers",
+      label: language === "ar" ? "المالية والمحاسبة" : "Accounting & Finance",
+      fullLabel: language === "ar" ? "الفواتير الضريبية، سندات القبض والصرف، وتقرير VAT" : "Invoices, Vouchers & VAT Compliance",
       icon: DollarSign,
       badge: receipts.length + expenses.length,
       color: "text-emerald-600",
@@ -720,26 +754,17 @@ export default function Dashboard() {
     },
     {
       id: "hr" as const,
-      label: language === "ar" ? "الموارد البشرية والرواتب" : "HR & Payroll",
-      fullLabel: language === "ar" ? "الموارد البشرية، الموظفين، الحضور والرواتب" : "HR, Employees, Attendance & Payroll",
+      label: language === "ar" ? "فريق العمل والموارد" : "Staff & HR",
+      fullLabel: language === "ar" ? "الموظفين والفنيين، الحضور واليوميات والرواتب" : "HR, Attendance, Payroll & Technicians",
       icon: Users,
       badge: employees.length,
-      color: "text-blue-600",
-      activeBg: "bg-blue-600 text-white shadow-xs"
-    },
-    {
-      id: "projects" as const,
-      label: language === "ar" ? "إدارة المشاريع" : "Projects Management",
-      fullLabel: language === "ar" ? "إدارة المشاريع والمواقع ونسب الإنجاز" : "Projects, Work Progress & Site Logs",
-      icon: Building2,
-      badge: projects.length,
-      color: "text-amber-600",
-      activeBg: "bg-amber-600 text-white shadow-xs"
+      color: "text-teal-600",
+      activeBg: "bg-teal-600 text-white shadow-xs"
     },
     {
       id: "reports" as const,
       label: language === "ar" ? "التقارير والإحصائيات" : "Reports & Analytics",
-      fullLabel: language === "ar" ? "التقارير اليومية والأسبوعية والشهرية" : "Daily, Weekly & Monthly Reports",
+      fullLabel: language === "ar" ? "التقارير التنفيذية والمالية الشاملة" : "Executive & Financial Reports",
       icon: BarChart3,
       badge: "PDF",
       color: "text-rose-600",
@@ -758,45 +783,45 @@ export default function Dashboard() {
       )}
 
       {/* Modern Fixed Sidebar */}
-      <aside className={`fixed inset-y-0 ${isRtl ? "right-0" : "left-0"} z-50 w-72 bg-white border-${isRtl ? "l" : "r"} border-slate-200 flex flex-col justify-between transform transition-transform duration-300 lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0 shadow-2xl" : (isRtl ? "translate-x-full" : "-translate-x-full")
-        }`}>
+      <aside className={`fixed inset-y-0 ${isRtl ? "right-0" : "left-0"} z-50 w-72 bg-white border-${isRtl ? "l" : "r"} border-slate-200 flex flex-col justify-between transform transition-transform duration-300 lg:translate-x-0 ${
+        mobileMenuOpen ? "translate-x-0 shadow-2xl" : (isRtl ? "translate-x-full" : "-translate-x-full")
+      }`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Brand Header */}
           <div className="p-5 border-b border-slate-150 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="relative w-14 h-12 rounded-xl overflow-hidden border border-slate-200 bg-white p-1 flex items-center justify-center shadow-xs">
+            <Link href="/" onClick={() => setMainModule("overview")} className="flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-2xl overflow-hidden border border-slate-200 bg-white p-1 flex items-center justify-center shadow-2xs">
                 <Image
                   src={settingsLogo || "/logo.png"}
                   alt="Ruaad Smart Logo"
                   fill
-                  sizes="56px"
+                  sizes="48px"
                   className="object-contain"
                   priority
                 />
               </div>
               <div>
-                <h1 className="text-base font-bold text-slate-900 leading-tight">رواد سمارت</h1>
-                <p className="text-[10px] text-purple-700 font-semibold tracking-wide">ذكاء يحمي عالمك</p>
+                <h1 className="text-base font-black text-slate-900 leading-tight">رواد سمارت</h1>
+                <p className="text-[10px] text-purple-700 font-bold tracking-wide">للأجهزة والحلول الذكية</p>
               </div>
             </Link>
 
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Sidebar Nav List */}
-          <nav className="p-3.5 space-y-1.5 flex-1 overflow-y-auto">
-            <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              {language === "ar" ? "أقسام النظام الأساسية" : "ERP System Modules"}
-            </div>
-
-            {/* 5 Main Modules Switcher */}
+          {/* Sidebar Nav List - Categorized for Maximum Clarity */}
+          <nav className="p-3.5 space-y-4 flex-1 overflow-y-auto">
+            {/* 1. Core Modules */}
             <div className="space-y-1">
-              {mainModulesList.map((m) => {
+              <div className="px-3 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                {language === "ar" ? "العمليات والمشاريع" : "Core Operations"}
+              </div>
+              {mainModulesList.slice(0, 4).map((m) => {
                 const isSelected = mainModule === m.id;
                 const Icon = m.icon;
                 return (
@@ -806,109 +831,121 @@ export default function Dashboard() {
                       setMainModule(m.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all ${isSelected
-                      ? "bg-slate-900 text-white font-semibold shadow-xs"
-                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                      }`}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-purple-700 text-white shadow-xs font-black"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Icon className={`w-4.5 h-4.5 ${isSelected ? "text-purple-300" : m.color}`} />
+                      <Icon className={`w-4.5 h-4.5 ${isSelected ? "text-white" : m.color}`} />
                       <span>{m.label}</span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                    {m.badge !== null && (
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
+                        isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
                       }`}>
-                      {m.badge}
-                    </span>
+                        {m.badge}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Sub-menu when in contracts / ops module */}
-            {mainModule === "contracts" && (
-              <div className="pt-3 mt-3 border-t border-slate-150 space-y-1">
-                <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  {language === "ar" ? "مستندات العمليات" : "Operations Docs"}
-                </div>
-                {navItems.map((item) => {
-                  const active = activeTab === item.id;
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setActiveTab(item.id as any);
-                        setMobileMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${active
-                        ? "bg-purple-50 text-purple-900 font-bold border border-purple-200/80 shadow-2xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 ${active ? "text-purple-700" : item.color}`} />
-                        <span>{item.label}</span>
-                      </div>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${active ? "bg-purple-200 text-purple-900 font-bold" : "bg-slate-100 text-slate-500"
-                        }`}>
-                        {item.count}
-                      </span>
-                    </button>
-                  );
-                })}
+            {/* 2. Finance, HR & Reports */}
+            <div className="space-y-1 pt-1 border-t border-slate-150">
+              <div className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                {language === "ar" ? "المالية وفريق العمل" : "Finance & Staff"}
               </div>
-            )}
-
-            <div className="pt-4 px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              {language === "ar" ? "النظام والإعدادات" : "System"}
+              {mainModulesList.slice(4).map((m) => {
+                const isSelected = mainModule === m.id;
+                const Icon = m.icon;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      setMainModule(m.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-purple-700 text-white shadow-xs font-black"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className={`w-4.5 h-4.5 ${isSelected ? "text-white" : m.color}`} />
+                      <span>{m.label}</span>
+                    </div>
+                    {m.badge !== null && (
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
+                        isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                      }`}>
+                        {m.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
-            <Link
-              href="/settings"
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-xs sm:text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-all"
-            >
-              <div className="flex items-center gap-2.5">
-                <SettingsIcon className="w-4.5 h-4.5 text-slate-500" />
-                <span>{language === "ar" ? "إعدادات الشركة والشعار" : "Company & Logo Settings"}</span>
+            {/* 3. System & Administration */}
+            <div className="space-y-1 pt-1 border-t border-slate-150">
+              <div className="px-3 pt-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                {language === "ar" ? "النظام والإعدادات" : "System & Settings"}
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
-            </Link>
 
-            {/* Exclusive Executive Permissions Management Button */}
-            {currentRole === "admin" && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setPermissionsModalOpen(true)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-purple-50 via-amber-50/50 to-purple-50 text-purple-950 border border-purple-200 hover:border-purple-300 hover:shadow-2xs transition-all cursor-pointer mt-1"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Crown className="w-4.5 h-4.5 text-amber-500" />
-                    <span>{language === "ar" ? "صلاحيات وحسابات الموظفين" : "Staff Permissions & Roles"}</span>
-                  </div>
-                  <span className="text-[10px] bg-amber-400/20 border border-amber-400/30 text-amber-900 font-bold px-1.5 py-0.5 rounded">👑 VIP</span>
-                </button>
+              <Link
+                href="/settings"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-all"
+              >
+                <div className="flex items-center gap-2.5">
+                  <SettingsIcon className="w-4.5 h-4.5 text-slate-500" />
+                  <span>{language === "ar" ? "إعدادات الشركة والشعار" : "Company & Logo Settings"}</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </Link>
 
-                <Link
-                  href="/security"
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-slate-900 to-purple-950 text-white hover:from-purple-950 hover:to-indigo-950 transition-all shadow-2xs mt-1"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <ShieldCheck className="w-4.5 h-4.5 text-emerald-400" />
-                    <span>{language === "ar" ? "جدار الحماية وسجل العمليات" : "Firewall & Audit Logs"}</span>
-                  </div>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.5 rounded font-mono">WAF</span>
-                </Link>
-              </>
-            )}
+              {currentRole === "admin" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPermissionsModalOpen(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl font-bold text-xs bg-gradient-to-r from-purple-50 via-amber-50/50 to-purple-50 text-purple-950 border border-purple-200 hover:border-purple-300 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-amber-500" />
+                      <span>{language === "ar" ? "صلاحيات وحسابات الموظفين" : "Staff Permissions"}</span>
+                    </div>
+                    <span className="text-[10px] bg-amber-400/20 text-amber-900 font-bold px-1.5 py-0.2 rounded">👑 VIP</span>
+                  </button>
+
+                  <Link
+                    href="/security"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl font-bold text-xs bg-gradient-to-r from-slate-900 to-purple-950 text-white hover:from-purple-950 hover:to-indigo-950 transition-all shadow-2xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span>{language === "ar" ? "جدار الحماية وسجل التدقيق" : "Firewall & Audit Logs"}</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-mono">WAF</span>
+                  </Link>
+                </>
+              )}
+            </div>
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-slate-150 space-y-3 bg-slate-50/60">
-            {/* Language Switcher */}
+          <div className="p-4 border-t border-slate-150 space-y-2.5 bg-slate-50/70">
             <button
               onClick={() => setLanguage(language === "ar" ? "en" : "ar")}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-purple-600" />
@@ -919,10 +956,9 @@ export default function Dashboard() {
               </span>
             </button>
 
-            {/* Logout button */}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-semibold transition-all"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-semibold transition-all cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>{t("logoutBtn")}</span>
@@ -938,169 +974,170 @@ export default function Dashboard() {
       {/* Main Content Area */}
       <div className={`flex-1 flex flex-col min-w-0 ${isRtl ? "lg:mr-72" : "lg:ml-72"}`}>
         {/* Top Navbar */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-3 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
-                  {mainModule === "contracts"
-                    ? navItems.find(i => i.id === activeTab)?.label
-                    : mainModulesList.find(m => m.id === mainModule)?.fullLabel}
-                </h2>
-                <p className="text-[11px] text-slate-500 hidden sm:block">
-                  {language === "ar" ? "نظام إدارة عمليات رواد سمارت المتكامل" : "Ruaad Smart Integrated Management ERP"}
-                </p>
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-1.5 text-[11px] text-purple-700 font-bold">
+                <span>رواد سمارت</span>
+                <span className="text-slate-300">/</span>
+                <span>{mainModulesList.find(m => m.id === mainModule)?.label}</span>
               </div>
-            </div>
-
-            {/* Quick Action Buttons Header */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/quotation/new"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-semibold text-xs transition-all shadow-sm shadow-purple-700/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">{t("newQuotation")}</span>
-              </Link>
-
-              <Link
-                href="/contract/new"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-2xs"
-              >
-                <Plus className="w-4 h-4 text-purple-700" />
-                <span className="hidden sm:inline">{t("newContract")}</span>
-              </Link>
-
-              <Link
-                href="/receipt/new"
-                className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-2xs"
-              >
-                <Plus className="w-4 h-4 text-teal-600" />
-                <span>{t("newReceipt")}</span>
-              </Link>
-
-              <Link
-                href="/certificate/new"
-                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-2xs"
-              >
-                <Plus className="w-4 h-4 text-amber-600" />
-                <span>{t("newCertificate")}</span>
-              </Link>
-
-              <Link
-                href="/letter/new"
-                className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-all shadow-2xs"
-              >
-                <Plus className="w-4 h-4 text-indigo-600" />
-                <span>{language === "ar" ? "خطاب جديد" : "New Letter"}</span>
-              </Link>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                {mainModulesList.find(m => m.id === mainModule)?.fullLabel}
+              </h2>
             </div>
           </div>
 
-          {/* 3 Dedicated Role-Based Cockpits Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 font-arabic">
-            <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
+          {/* Quick Actions & Role Controls */}
+          <div className="flex items-center gap-2.5">
+            {/* Role Switcher Pill */}
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
                 type="button"
                 onClick={() => handleSwitchRole("admin")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${currentRole === "admin"
-                  ? "bg-white text-purple-900 shadow-2xs font-extrabold"
-                  : "text-slate-600 hover:text-slate-900"
-                  }`}
-                title="لوحة تحكم الإدارة العليا والتنفيذية"
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  currentRole === "admin"
+                    ? "bg-white text-purple-900 shadow-2xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="لوحة تحكم الإدارة العليا"
               >
-                <span>👑 الإدارة العليا</span>
+                👑 الإدارة
               </button>
-
               <button
                 type="button"
                 onClick={() => handleSwitchRole("operations")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${currentRole === "operations"
-                  ? "bg-white text-blue-900 shadow-2xs font-extrabold"
-                  : "text-slate-600 hover:text-slate-900"
-                  }`}
-                title="لوحة تحكم الموظف الإداري وإدارة العمليات"
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  currentRole === "operations"
+                    ? "bg-white text-blue-900 shadow-2xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="الموظف الإداري والعمليات"
               >
-                <span>📋 الموظف الإداري (العمليات)</span>
+                📋 العمليات
               </button>
-
               <button
                 type="button"
                 onClick={() => handleSwitchRole("accounting")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${currentRole === "accounting"
-                  ? "bg-white text-emerald-900 shadow-2xs font-extrabold"
-                  : "text-slate-600 hover:text-slate-900"
-                  }`}
-                title="لوحة تحكم الحسابات والمالية والفواتير"
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  currentRole === "accounting"
+                    ? "bg-white text-emerald-900 shadow-2xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="الحسابات والمالية"
               >
-                <span>💰 الحسابات والمالية</span>
+                💰 الحسابات
               </button>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Contextual Role Explanation Pill */}
-              <div className="text-[11px] text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>
-                  {currentRole === "admin" && "تحكم كامل بالإدارة: عروض الأسعار، العقود، هوامش الأرباح التقديرية، والاعتمادات الرسمية."}
-                  {currentRole === "operations" && "تركيز الموظف الإداري: مراحل المشاريع، عمال وفنيي اليومية بالمواقع، ومتابعة عروض الأسعار."}
-                  {currentRole === "accounting" && "تركيز الحسابات: إصدار الفواتير العادية والضريبية، سندات القبض والصرف، ومسير الرواتب والبونص."}
-                </span>
-              </div>
+            {/* Powerful Single "➕ إجراء جديد" Dropdown Button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setQuickCreateOpen(!quickCreateOpen)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition shadow-sm shadow-purple-700/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>{language === "ar" ? "➕ إنشاء جديد" : "Create New"}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${quickCreateOpen ? "rotate-180" : ""}`} />
+              </button>
 
-              {/* Exclusive Executive Permissions Control Button */}
-              {currentRole === "admin" && (
+              {quickCreateOpen && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => setPermissionsModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-800 to-indigo-900 hover:from-purple-900 hover:to-indigo-950 text-white font-bold text-xs shadow-xs hover:shadow-sm transition cursor-pointer shrink-0 border border-purple-600/30"
-                    title="التحكم في صلاحيات وحسابات المحاسب والموظف الإداري"
-                  >
-                    <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    <span>إدارة الصلاحيات</span>
-                    <span className="bg-amber-400/20 text-amber-300 text-[10px] px-1.5 py-0.2 rounded font-mono">👑</span>
-                  </button>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setQuickCreateOpen(false)}
+                  />
+                  <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in zoom-in-95 duration-100 font-arabic">
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      {language === "ar" ? "المبيعات والمشاريع" : "Sales & Projects"}
+                    </div>
 
-                  <Link
-                    href="/security"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-950 text-white font-bold text-xs shadow-xs hover:shadow-sm transition cursor-pointer shrink-0 border border-slate-700"
-                    title="جدار الحماية وسجل تدقيق العمليات"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>جدار الحماية والرقابة</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  </Link>
+                    <Link
+                      href="/quotation/new"
+                      onClick={() => setQuickCreateOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition"
+                    >
+                      <FileText className="w-4 h-4 text-purple-600" />
+                      <span>{language === "ar" ? "عرض سعر جديد" : "New Quotation"}</span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuickCreateOpen(false);
+                        setMainModule("projects");
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition cursor-pointer text-right"
+                    >
+                      <Building2 className="w-4 h-4 text-amber-600" />
+                      <span>{language === "ar" ? "مشروع ميداني جديد" : "New Project"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuickCreateOpen(false);
+                        setMainModule("sales");
+                        setSalesSubTab("priceList");
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-purple-700 transition cursor-pointer text-right"
+                    >
+                      <Layers className="w-4 h-4 text-purple-600" />
+                      <span>{language === "ar" ? "صنف جديد في الكتالوج" : "New Catalog Item"}</span>
+                    </button>
+
+                    <div className="border-t border-slate-100 my-1"></div>
+
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      {language === "ar" ? "العقود والمالية" : "Contracts & Finance"}
+                    </div>
+
+                    <Link
+                      href="/contract/new"
+                      onClick={() => setQuickCreateOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                    >
+                      <ScrollText className="w-4 h-4 text-blue-600" />
+                      <span>{language === "ar" ? "عقد توريد وتركيب" : "New Contract"}</span>
+                    </Link>
+
+                    <Link
+                      href="/receipt/new"
+                      onClick={() => setQuickCreateOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition"
+                    >
+                      <DollarSign className="w-4 h-4 text-teal-600" />
+                      <span>{language === "ar" ? "سند قبض مالي" : "New Receipt"}</span>
+                    </Link>
+
+                    <Link
+                      href="/certificate/new"
+                      onClick={() => setQuickCreateOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition"
+                    >
+                      <Award className="w-4 h-4 text-amber-600" />
+                      <span>{language === "ar" ? "شهادة إنجاز وتسليم" : "New Certificate"}</span>
+                    </Link>
+
+                    <Link
+                      href="/letter/new"
+                      onClick={() => setQuickCreateOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+                    >
+                      <Mail className="w-4 h-4 text-indigo-600" />
+                      <span>{language === "ar" ? "خطاب رسمي موجه" : "New Letter"}</span>
+                    </Link>
+                  </div>
                 </>
               )}
             </div>
-          </div>
-
-          {/* Top Quick Module Selector Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-2.5">
-            {mainModulesList.map((m) => {
-              const isSelected = mainModule === m.id;
-              const Icon = m.icon;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => setMainModule(m.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${isSelected
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-slate-100/90 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900"
-                    }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-purple-300" : m.color}`} />
-                  <span>{m.label}</span>
-                </button>
-              );
-            })}
           </div>
         </header>
 
@@ -1118,40 +1155,371 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              {/* Accounting & Finance Module */}
-              {mainModule === "accounting" && (
-                <AccountingModule
-                  quotations={quotations}
-                  receipts={receipts}
-                  expenses={expenses}
-                  projects={projects}
-                  journalEntries={journalEntries}
-                  onSaveExpense={handleSaveExpense}
-                  onDeleteExpense={handleDeleteExpense}
-                  onDeleteReceipt={handleDeleteReceipt}
-                  onSaveQuotation={handleSaveQuotation}
-                  onSaveReceipt={handleSaveReceipt}
-                  onSaveJournalEntry={handleSaveJournalEntry}
-                  onDeleteJournalEntry={handleDeleteJournalEntry}
-                />
-              )}
+              {/* Executive Overview Hub */}
+              {mainModule === "overview" && (
+                <div className="space-y-6 font-arabic">
+                  {/* Executive Welcome & Hero Hub */}
+                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-950 via-indigo-900 to-slate-900 p-6 sm:p-8 text-white shadow-xl">
+                    <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                      <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-purple-200 text-xs font-bold">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                          <span>نظام إدارة العمليات الذكية - رواد سمارت</span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
+                          مرحباً بك في مركز القيادة والعمليات 🚀
+                        </h2>
+                        <p className="text-purple-200/80 text-xs sm:text-sm max-w-xl leading-relaxed">
+                          متابعة فورية ومباشرة لكافة مشاريع الكاميرات والشبكات الميدانية، عروض الأسعار الصادرة، ونسب الإنجاز والتحصيلات المالية.
+                        </p>
+                      </div>
 
-              {/* HR & Payroll Module */}
-              {mainModule === "hr" && (
-                <HRModule
-                  employees={employees}
-                  attendance={attendance}
-                  payroll={payroll}
-                  projects={projects}
-                  settings={settings}
-                  onSaveEmployee={handleSaveEmployee}
-                  onDeleteEmployee={handleDeleteEmployee}
-                  onSaveAttendance={handleSaveAttendance}
-                  onDeleteAttendance={handleDeleteAttendance}
-                  onSavePayroll={handleSavePayroll}
-                  onSaveProject={handleSaveProject}
-                  onOpenPermissionsModal={() => setPermissionsModalOpen(true)}
-                />
+                      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <Link
+                          href="/quotation/new"
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm transition-all shadow-md shadow-purple-900/50 cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>عرض سعر جديد</span>
+                        </Link>
+                        <button
+                          onClick={() => setMainModule("projects")}
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-md transition-all cursor-pointer"
+                        >
+                          <Building2 className="w-4 h-4 text-amber-300" />
+                          <span>المشاريع الميدانية</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4 Interactive KPI Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* 1. Projects Card */}
+                    <div
+                      onClick={() => setMainModule("projects")}
+                      className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-amber-400 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">المشاريع الميدانية</span>
+                        <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 mt-2">
+                        {activeProjectsCount} <span className="text-xs font-sans text-slate-500 font-normal">مشروع جاري</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-amber-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                        <span className="flex items-center gap-1">
+                          <Activity className="w-3.5 h-3.5" />
+                          {projects.length} إجمالي المواقع
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+
+                    {/* 2. Quotations Card */}
+                    <div
+                      onClick={() => setMainModule("sales")}
+                      className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-purple-400 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">عروض الأسعار</span>
+                        <div className="w-11 h-11 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black font-mono text-purple-900 mt-2">
+                        {totalQuotationsVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500 font-normal">AED</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-purple-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                        <span className="flex items-center gap-1">
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                          {pendingQuotationsCount} معلق | {executedQuotesCount} معتمد
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+
+                    {/* 3. Accounting & Receipts Card */}
+                    <div
+                      onClick={() => setMainModule("accounting")}
+                      className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-emerald-400 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">التحصيلات والمالية</span>
+                        <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <DollarSign className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 mt-2">
+                        {totalReceiptsVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500 font-normal">AED</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-emerald-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          ذمم: {totalReceivablesVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} AED
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+
+                    {/* 4. Catalog Card */}
+                    <div
+                      onClick={() => {
+                        setMainModule("sales");
+                        setSalesSubTab("priceList");
+                      }}
+                      className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-indigo-400 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">كتالوج الأصناف والأسعار</span>
+                        <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Layers className="w-5 h-5" />
+                        </div>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 mt-2">
+                        {PRICE_LIST_ITEMS.length} <span className="text-xs font-sans text-slate-500 font-normal">صنف معتمد</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-indigo-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          كاميرات، شبكات، وإنذار
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Grid - مركز العمليات السريعة */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-700" />
+                        <span>مركز العمليات والإجراءات السريعة</span>
+                      </h3>
+                      <span className="text-xs text-slate-400">وصول فوري للأقسام دون عناء</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                      <Link
+                        href="/quotation/new"
+                        className="p-3.5 rounded-xl bg-purple-50/70 border border-purple-100 hover:border-purple-300 hover:bg-purple-100/60 transition-all flex flex-col items-start gap-2 group cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-purple-700 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-purple-950">عرض سعر جديد</div>
+                          <p className="text-[10px] text-purple-700/80 mt-0.5">تسعير احترافي للعميل</p>
+                        </div>
+                      </Link>
+
+                      <button
+                        onClick={() => setMainModule("projects")}
+                        className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-100 hover:border-amber-300 hover:bg-amber-100/60 transition-all flex flex-col items-start gap-2 group cursor-pointer text-right"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-amber-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-amber-950">المشاريع والمخططات</div>
+                          <p className="text-[10px] text-amber-700/80 mt-0.5">رفع مخططات ومتابعة الإنجاز</p>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setMainModule("sales");
+                          setSalesSubTab("priceList");
+                        }}
+                        className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 hover:border-indigo-300 hover:bg-indigo-100/60 transition-all flex flex-col items-start gap-2 group cursor-pointer text-right"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <Layers className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-indigo-950">كتالوج الأصناف</div>
+                          <p className="text-[10px] text-indigo-700/80 mt-0.5">إضافة وتعديل بنود الأسعار</p>
+                        </div>
+                      </button>
+
+                      <Link
+                        href="/contract/new"
+                        className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 hover:border-blue-300 hover:bg-blue-100/60 transition-all flex flex-col items-start gap-2 group cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <ScrollText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-blue-950">عقد توريد وتركيب</div>
+                          <p className="text-[10px] text-blue-700/80 mt-0.5">عقد قانوني موثق</p>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/receipt/new"
+                        className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-100 hover:border-teal-300 hover:bg-teal-100/60 transition-all flex flex-col items-start gap-2 group cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <DollarSign className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-teal-950">سند قبض مالي</div>
+                          <p className="text-[10px] text-teal-700/80 mt-0.5">تحصيل فوري لدفعة العميل</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* 2-Column Live Activity Stream */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* 1. Projects Stream */}
+                    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden flex flex-col">
+                      <div className="p-4 sm:p-5 border-b border-slate-150 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4.5 h-4.5 text-amber-600" />
+                          <h3 className="font-bold text-sm text-slate-900">المشاريع الميدانية النشطة</h3>
+                        </div>
+                        <button
+                          onClick={() => setMainModule("projects")}
+                          className="text-xs font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>عرض كل المشاريع ({projects.length})</span>
+                          <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+                        </button>
+                      </div>
+
+                      <div className="p-4 sm:p-5 flex-1 divide-y divide-slate-100 space-y-3">
+                        {projects.length === 0 ? (
+                          <div className="text-center py-12">
+                            <Building2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                            <p className="text-xs text-slate-500">لا توجد مشاريع مسجلة حالياً.</p>
+                            <button
+                              onClick={() => setMainModule("projects")}
+                              className="mt-3 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg cursor-pointer"
+                            >
+                              ➕ إضافة أول مشروع
+                            </button>
+                          </div>
+                        ) : (
+                          projects.slice(0, 4).map((p) => {
+                            const progress = p.completionRate || 0;
+                            return (
+                              <div key={p.id} className="pt-3 first:pt-0 flex items-center justify-between gap-4">
+                                <div className="space-y-1 min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs font-bold text-slate-500">#{p.projectNo || p.id}</span>
+                                    <h4 className="font-bold text-xs text-slate-900 truncate">{p.title}</h4>
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                                    <span>العميل: {p.clientName}</span>
+                                    {p.location && <span>• {p.location}</span>}
+                                    {p.blueprints && p.blueprints.length > 0 && (
+                                      <span className="text-blue-700 font-bold">({p.blueprints.length} مخططات)</span>
+                                    )}
+                                  </div>
+                                  <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                                    <div
+                                      className="bg-amber-500 h-full rounded-full transition-all"
+                                      style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                  <span className="font-mono font-bold text-xs text-slate-700">{progress}%</span>
+                                  <button
+                                    onClick={() => setMainModule("projects")}
+                                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg transition cursor-pointer"
+                                  >
+                                    فتح المشروع
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 2. Quotations Stream */}
+                    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden flex flex-col">
+                      <div className="p-4 sm:p-5 border-b border-slate-150 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4.5 h-4.5 text-purple-700" />
+                          <h3 className="font-bold text-sm text-slate-900">أحدث عروض الأسعار والاعتمادات</h3>
+                        </div>
+                        <button
+                          onClick={() => setMainModule("sales")}
+                          className="text-xs font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>عرض كل العروض ({quotations.length})</span>
+                          <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+                        </button>
+                      </div>
+
+                      <div className="p-4 sm:p-5 flex-1 divide-y divide-slate-100 space-y-3">
+                        {quotations.length === 0 ? (
+                          <div className="text-center py-12">
+                            <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                            <p className="text-xs text-slate-500">لا توجد عروض أسعار مسجلة.</p>
+                            <Link
+                              href="/quotation/new"
+                              className="inline-block mt-3 px-3 py-1.5 bg-purple-700 text-white text-xs font-bold rounded-lg"
+                            >
+                              ➕ إنشاء أول عرض سعر
+                            </Link>
+                          </div>
+                        ) : (
+                          quotations.slice(0, 4).map((q) => {
+                            const isApproved = q.status === "approved" || q.status === "executed";
+                            return (
+                              <div key={q.id} className="pt-3 first:pt-0 flex items-center justify-between gap-4">
+                                <div className="space-y-1 min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs font-bold text-purple-700">{q.quotationNo}</span>
+                                    <h4 className="font-bold text-xs text-slate-900 truncate">{q.clientName}</h4>
+                                    <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${
+                                      isApproved ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}>
+                                      {isApproved ? "معتمد" : "قيد المتابعة"}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                                    <span>{q.date}</span>
+                                    <span>•</span>
+                                    <span className="font-mono font-bold text-slate-800">
+                                      {q.total?.toLocaleString("en-AE", { maximumFractionDigits: 0 })} AED
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {!isApproved && (
+                                    <button
+                                      onClick={() => handleStatusChange(q, "approved")}
+                                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition cursor-pointer shadow-2xs"
+                                      title="اعتماد فوري وتحويله لمشروع ميداني"
+                                    >
+                                      ⚡ اعتماد
+                                    </button>
+                                  )}
+                                  <Link
+                                    href={`/quotation/${q.id}`}
+                                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg transition cursor-pointer"
+                                  >
+                                    معاينة
+                                  </Link>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* Projects Management Module */}
@@ -1170,287 +1538,84 @@ export default function Dashboard() {
                 />
               )}
 
-              {/* Comprehensive Reports Module */}
-              {mainModule === "reports" && (
-                <ReportsModule
-                  quotations={quotations}
-                  contracts={contracts}
-                  receipts={receipts}
-                  expenses={expenses}
-                  employees={employees}
-                  attendance={attendance}
-                  payroll={payroll}
-                  projects={projects}
-                  settings={settings}
-                />
-              )}
+              {/* Sales & Catalog Module */}
+              {mainModule === "sales" && (
+                <div className="space-y-6 font-arabic">
+                  {/* Sales Subtab Bar */}
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3 gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSalesSubTab("quotations")}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          salesSubTab === "quotations"
+                            ? "bg-purple-700 text-white shadow-xs"
+                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>عروض الأسعار</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
+                          salesSubTab === "quotations" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {quotations.length}
+                        </span>
+                      </button>
 
-              {/* Contracts & Operations Module */}
-              {mainModule === "contracts" && (
-                <div className="space-y-6">
-                  {/* Dynamic Role-Based Overview Stat Cards Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-arabic">
-                    {/* OPERATIONS DASHBOARD CARDS */}
-                    {currentRole === "operations" && (
-                      <>
-                        <div
-                          onClick={() => setMainModule("projects")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-blue-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">المشاريع والمواقع النشطة</span>
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Building2 className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-2">
-                            {activeProjectsCount} <span className="text-xs font-sans text-slate-500">مشروع جاري</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-blue-700 font-medium mt-2">
-                            <Activity className="w-3.5 h-3.5" />
-                            <span>متابعة مراحل التركيب والتنفيذ</span>
-                          </div>
-                        </div>
+                      <button
+                        onClick={() => setSalesSubTab("priceList")}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          salesSubTab === "priceList"
+                            ? "bg-purple-700 text-white shadow-xs"
+                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        }`}
+                      >
+                        <Layers className="w-4 h-4" />
+                        <span>دليل الأصناف والأسعار (الكتالوج)</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
+                          salesSubTab === "priceList" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {PRICE_LIST_ITEMS.length}
+                        </span>
+                      </button>
+                    </div>
 
-                        <div
-                          onClick={() => setMainModule("hr")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-teal-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">حضور اليوم بالمواقع الميدانية</span>
-                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Clock className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-teal-700 mt-2">
-                            {todayStaffPresent} <span className="text-xs font-sans text-slate-500">فني وعامل حاضر</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-teal-700 font-medium mt-2">
-                            <HardHat className="w-3.5 h-3.5" />
-                            <span>توزيع المواقع واليوميات</span>
-                          </div>
-                        </div>
-
-                        <div
-                          onClick={() => setActiveTab("quotations")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-purple-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">عروض أسعار قيد المتابعة</span>
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <FileText className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-2">
-                            {pendingQuotationsCount} <span className="text-xs font-sans text-slate-500">عرض معلق</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-purple-700 font-medium mt-2">
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                            <span>متابعة موافقة العملاء</span>
-                          </div>
-                        </div>
-
-                        <div
-                          onClick={() => setActiveTab("certificates")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-amber-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">شهادات الإنجاز والتسليم</span>
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Award className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-2">
-                            {certificates.length} <span className="text-xs font-sans text-slate-500">شهادة تسليم</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-amber-700 font-medium mt-2">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>جاهزة للاعتماد والتسليم للعميل</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* ACCOUNTING DASHBOARD CARDS */}
-                    {currentRole === "accounting" && (
-                      <>
-                        <div
-                          onClick={() => setActiveTab("invoices")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-purple-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">إجمالي الفواتير الصادرة</span>
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <ReceiptIcon className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-purple-900 mt-2">
-                            {totalQuotationsVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500">AED</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-purple-700 font-medium mt-2">
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>فواتير عادية وضريبية 5%</span>
-                          </div>
-                        </div>
-
-                        <div
-                          onClick={() => setActiveTab("receipts")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-emerald-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">المقبوضات المحصلة</span>
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <DollarSign className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-700 mt-2">
-                            {totalReceiptsVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500">AED</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium mt-2">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>سندات قبض معتمدة في البنك</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm transition-all group">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">المستحقات غير المحصلة (ذمم)</span>
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Clock className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-amber-800 mt-2">
-                            {totalReceivablesVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500">AED</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-amber-700 font-medium mt-2">
-                            <Activity className="w-3.5 h-3.5" />
-                            <span>ذمم عملاء قيد التحصيل</span>
-                          </div>
-                        </div>
-
-                        <div
-                          onClick={() => setMainModule("accounting")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-indigo-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">ضريبة القيمة المضافة (VAT 201)</span>
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Layers className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-indigo-900 mt-2">
-                            {estimatedVatOutput.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500">AED</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-indigo-700 font-medium mt-2">
-                            <BadgeCheck className="w-3.5 h-3.5" />
-                            <span>مخرجات ضريبية 5% مسجلة</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* EXECUTIVE / ADMIN DASHBOARD CARDS */}
-                    {currentRole === "admin" && (
-                      <>
-                        {/* Total Pipeline Card */}
-                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm transition-all group">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("pipelineValue")}</span>
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <FileText className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-2">
-                            {totalQuotationsVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500">AED</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-purple-700 font-medium mt-2">
-                            <Activity className="w-3.5 h-3.5" />
-                            <span>{quotations.length} {t("quotationsTab")}</span>
-                          </div>
-                        </div>
-
-                        {/* Expected Margin Card */}
-                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm transition-all group">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t("margin")}</span>
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <TrendingUp className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-700 mt-2">
-                            {totalMarginVal.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500">AED</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-emerald-700 font-medium mt-2">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>{language === "ar" ? "هامش ربح تنفيذي معتمد" : "Approved Margin"}</span>
-                          </div>
-                        </div>
-
-                        {/* Executed & Handover Card */}
-                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm transition-all group">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{language === "ar" ? "المشاريع المنفذة" : "Executed Projects"}</span>
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Award className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-2">
-                            {executedQuotesCount} <span className="text-xs font-sans text-slate-500">{language === "ar" ? "مشروع" : "projects"}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-blue-700 font-medium mt-2">
-                            <ScrollText className="w-3.5 h-3.5" />
-                            <span>{contracts.length} {t("contractsTab")} | {certificates.length} {t("certificatesTab")}</span>
-                          </div>
-                        </div>
-
-                        {/* Catalog Items Card */}
-                        <div
-                          onClick={() => setActiveTab("priceList")}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-sm hover:border-purple-300 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{language === "ar" ? "قائمة الأصناف المعتمدة" : "Catalog Items"}</span>
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <Layers className="w-5 h-5" />
-                            </div>
-                          </div>
-                          <div className="text-xl sm:text-2xl font-bold font-mono text-slate-900 mt-2">
-                            {PRICE_LIST_ITEMS.length} <span className="text-xs font-sans text-slate-500">{language === "ar" ? "صنف" : "items"}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-amber-700 font-medium mt-2">
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                            <span>{language === "ar" ? "تصفح قائمة الأسعار" : "Browse Price List"}</span>
-                          </div>
-                        </div>
-                      </>
+                    {salesSubTab === "quotations" && (
+                      <Link
+                        href="/quotation/new"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition shadow-sm"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>إنشاء عرض سعر جديد</span>
+                      </Link>
                     )}
                   </div>
 
-                  {/* Search & Filter Header Bar */}
-                  {activeTab !== "priceList" && (
-                    <div className="bg-white border border-slate-200/90 p-3.5 rounded-2xl shadow-2xs flex items-center justify-between gap-4">
-                      <div className="relative flex-1 max-w-md">
-                        <Search className={`w-4 h-4 absolute top-3 ${isRtl ? "right-3.5" : "left-3.5"} text-slate-400 pointer-events-none`} />
-                        <input
-                          type="text"
-                          placeholder={t("searchPlaceholder")}
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className={`w-full bg-slate-50 border border-slate-200 rounded-xl ${isRtl ? "pr-10 pl-4" : "pl-10 pr-4"
+                  {/* Content of Quotations SubTab */}
+                  {salesSubTab === "quotations" && (
+                    <div className="space-y-4">
+                      {/* Search & Status Filters */}
+                      <div className="bg-white border border-slate-200/90 p-3.5 rounded-2xl shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        <div className="relative flex-1 max-w-md">
+                          <Search className={`w-4 h-4 absolute top-3 ${isRtl ? "right-3.5" : "left-3.5"} text-slate-400 pointer-events-none`} />
+                          <input
+                            type="text"
+                            placeholder={t("searchPlaceholder")}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={`w-full bg-slate-50 border border-slate-200 rounded-xl ${
+                              isRtl ? "pr-10 pl-4" : "pl-10 pr-4"
                             } py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20`}
-                        />
+                          />
+                        </div>
+
+                        <div className="text-xs text-slate-500 font-medium">
+                          {language === "ar" ? "مرتبة حسب الأحدث" : "Sorted by newest"}
+                        </div>
                       </div>
 
-                      <div className="text-xs text-slate-500 font-medium">
-                        {language === "ar" ? "فرز حسب أحدث المستندات" : "Sorted by newest"}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Main Content Workspace Container */}
-                  <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
-                    {/* Quotations Tab */}
-                    {activeTab === "quotations" && (
+                      {/* Quotations Table */}
+                      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
+                        {
                       filteredQuotations.length === 0 ? (
                         <div className="text-center py-16 px-4">
                           <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -1584,171 +1749,128 @@ export default function Dashboard() {
                             </tbody>
                           </table>
                         </div>
-                      )
-                    )}
+                      )}
+                      </div>
+                    </div>
+                  )}
 
-                    {/* Invoices Tab */}
-                    {activeTab === "invoices" && (
-                      filteredQuotations.length === 0 ? (
-                        <div className="text-center py-16 px-4">
-                          <ReceiptIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                          <h3 className="text-base font-bold text-slate-800">{language === "ar" ? "لا توجد فواتير" : "No Invoices Found"}</h3>
-                          <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-md mx-auto">
-                            {language === "ar" ? "يمكنك إنشاء فواتير ضريبية أو فواتير عادية بيان أسعار لعملائك بسهولة." : "You can generate tax invoices or standard bills easily."}
-                          </p>
-                          <div className="flex items-center justify-center gap-2 mt-4">
-                            <Link
-                              href="/quotation/new?view=invoice&type=tax"
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-semibold shadow-xs"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>{language === "ar" ? "فاتورة ضريبية جديدة" : "New Tax Invoice"}</span>
-                            </Link>
-                            <Link
-                              href="/quotation/new?view=invoice&type=standard"
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>{language === "ar" ? "فاتورة عادية / بيان" : "New Standard Bill"}</span>
-                            </Link>
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          {/* Header Action Row */}
-                          <div className="p-3.5 border-b border-slate-150 flex items-center justify-between gap-3 bg-slate-50/60">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-500 font-semibold">{language === "ar" ? "أنواع الفواتير المتوفرة:" : "Available Invoices:"}</span>
-                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold">
-                                🧾 {filteredQuotations.filter(q => q.invoiceType === "tax").length} {language === "ar" ? "ضريبية (5% VAT)" : "Tax"}
-                              </span>
-                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold">
-                                📄 {filteredQuotations.filter(q => q.invoiceType !== "tax").length} {language === "ar" ? "عادية / بيان (0%)" : "Standard"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Link
-                                href="/quotation/new?view=invoice&type=tax"
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-semibold shadow-2xs transition"
-                              >
-                                <Plus className="w-3 h-3" />
-                                <span>{language === "ar" ? "فاتورة ضريبية" : "Tax Invoice"}</span>
-                              </Link>
-                              <Link
-                                href="/quotation/new?view=invoice&type=standard"
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition"
-                              >
-                                <Plus className="w-3 h-3" />
-                                <span>{language === "ar" ? "فاتورة عادية / بيان" : "Standard Bill"}</span>
-                              </Link>
-                            </div>
-                          </div>
+                  {/* Content of Price List SubTab */}
+                  {salesSubTab === "priceList" && (
+                    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs p-4 sm:p-6">
+                      <PriceListTable />
+                    </div>
+                  )}
+                </div>
+              )}
 
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse" dir={isRtl ? "rtl" : "ltr"}>
-                              <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50/80 text-xs text-slate-600 font-semibold tracking-wider">
-                                  <th className="py-3.5 px-5">{t("invoiceNo")}</th>
-                                  <th className="py-3.5 px-5">{language === "ar" ? "نوع الفاتورة" : "Type"}</th>
-                                  <th className="py-3.5 px-5">{t("clientName")}</th>
-                                  <th className="py-3.5 px-5">{t("date")}</th>
-                                  <th className="py-3.5 px-5 text-right">{language === "ar" ? "المجموع" : "Subtotal"}</th>
-                                  <th className="py-3.5 px-5 text-right">{t("total")}</th>
-                                  <th className="py-3.5 px-5 text-center">{language === "ar" ? "طباعة ومعاينة" : "Actions"}</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 text-sm">
-                                {filteredQuotations.map((quote) => {
-                                  const isTax = quote.invoiceType === "tax";
-                                  return (
-                                    <tr key={quote.id} className="hover:bg-slate-50/70 transition-colors group">
-                                      <td className="py-3.5 px-5 font-mono font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
-                                        INV-{quote.quotationNo.replace(/\D/g, '') || quote.quotationNo}
-                                      </td>
-                                      <td className="py-3.5 px-5">
-                                        <button
-                                          onClick={() => handleSaveQuotation({
-                                            ...quote,
-                                            invoiceType: isTax ? "standard" : "tax",
-                                            updatedAt: new Date().toISOString()
-                                          })}
-                                          className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center gap-1 ${isTax
-                                            ? "bg-purple-50 text-purple-900 border-purple-200 hover:bg-purple-100"
-                                            : "bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100"
-                                            }`}
-                                          title={language === "ar" ? "انقر للتبديل بين ضريبية وعادية" : "Click to toggle type"}
-                                        >
-                                          <span>{isTax ? "🧾" : "📄"}</span>
-                                          <span>{isTax ? (language === "ar" ? "ضريبية (5% VAT)" : "Tax (5%)") : (language === "ar" ? "عادية / بيان (0%)" : "Standard (0%)")}</span>
-                                        </button>
-                                      </td>
-                                      <td className="py-3.5 px-5 font-medium text-slate-800">
-                                        <div>{quote.clientName}</div>
-                                        {quote.projectReference && (
-                                          <div className="text-[11px] text-slate-400 font-normal">{quote.projectReference}</div>
-                                        )}
-                                      </td>
-                                      <td className="py-3.5 px-5 text-slate-500 text-xs">
-                                        {quote.date}
-                                      </td>
-                                      <td className="py-3.5 px-5 text-right font-mono text-slate-600 text-xs">
-                                        {(quote.subtotal || quote.total).toLocaleString("en-AE", { maximumFractionDigits: 2 })} AED
-                                      </td>
-                                      <td className="py-3.5 px-5 text-right font-mono font-bold text-emerald-700">
-                                        {quote.total.toLocaleString("en-AE", { maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-500 font-sans">AED</span>
-                                      </td>
-                                      <td className="py-3.5 px-5 text-center">
-                                        <div className="flex items-center justify-center gap-1.5">
-                                          {/* Print Tax */}
-                                          <a
-                                            href={`/quotation/${quote.id}?view=invoice&type=tax&print=true`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors"
-                                            title={language === "ar" ? "طباعة فاتورة ضريبية معتمدة" : "Print Tax Invoice"}
-                                          >
-                                            <span className="text-xs font-bold">🧾</span>
-                                          </a>
-                                          {/* Print Standard / Bayan */}
-                                          <a
-                                            href={`/quotation/${quote.id}?view=invoice&type=standard&print=true`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors"
-                                            title={language === "ar" ? "طباعة فاتورة عادية / بيان أسعار" : "Print Standard Bill"}
-                                          >
-                                            <span className="text-xs font-bold">📄</span>
-                                          </a>
-                                          {/* View */}
-                                          <Link
-                                            href={`/quotation/${quote.id}?view=invoice`}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                            title={language === "ar" ? "معاينة الفاتورة" : "View Invoice"}
-                                          >
-                                            <ExternalLink className="w-4 h-4" />
-                                          </Link>
-                                          {/* Edit */}
-                                          <Link
-                                            href={`/quotation/${quote.id}`}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                            title={language === "ar" ? "تعديل الفاتورة" : "Edit Invoice"}
-                                          >
-                                            <Edit className="w-4 h-4" />
-                                          </Link>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      )
-                    )}
+              {/* Contracts & Documentation Module */}
+              {mainModule === "contracts" && (
+                <div className="space-y-6 font-arabic">
+                  {/* Contracts Subtabs */}
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3 gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setContractsSubTab("contracts")}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          contractsSubTab === "contracts"
+                            ? "bg-blue-600 text-white shadow-xs"
+                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        }`}
+                      >
+                        <ScrollText className="w-4 h-4" />
+                        <span>العقود الرسمية</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
+                          contractsSubTab === "contracts" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {contracts.length}
+                        </span>
+                      </button>
 
-                    {/* Contracts Tab */}
-                    {activeTab === "contracts" && (
+                      <button
+                        onClick={() => setContractsSubTab("certificates")}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          contractsSubTab === "certificates"
+                            ? "bg-blue-600 text-white shadow-xs"
+                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        }`}
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>شهادات الإنجاز والتسليم</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
+                          contractsSubTab === "certificates" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {certificates.length}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => setContractsSubTab("letters")}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          contractsSubTab === "letters"
+                            ? "bg-blue-600 text-white shadow-xs"
+                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                        }`}
+                      >
+                        <Mail className="w-4 h-4" />
+                        <span>الخطابات والمراسلات</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
+                          contractsSubTab === "letters" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {letters.length}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div>
+                      {contractsSubTab === "contracts" && (
+                        <Link
+                          href="/contract/new"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>عقد جديد</span>
+                        </Link>
+                      )}
+                      {contractsSubTab === "certificates" && (
+                        <Link
+                          href="/certificate/new"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>شهادة إنجاز جديدة</span>
+                        </Link>
+                      )}
+                      {contractsSubTab === "letters" && (
+                        <Link
+                          href="/letter/new"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>خطاب رسمي جديد</span>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="bg-white border border-slate-200/90 p-3.5 rounded-2xl shadow-2xs">
+                    <div className="relative max-w-md">
+                      <Search className={`w-4 h-4 absolute top-3 ${isRtl ? "right-3.5" : "left-3.5"} text-slate-400 pointer-events-none`} />
+                      <input
+                        type="text"
+                        placeholder={t("searchPlaceholder")}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className={`w-full bg-slate-50 border border-slate-200 rounded-xl ${
+                          isRtl ? "pr-10 pl-4" : "pl-10 pr-4"
+                        } py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Subtab Content */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
+                    {contractsSubTab === "contracts" && (
                       filteredContracts.length === 0 ? (
                         <div className="text-center py-16 px-4">
                           <ScrollText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -1837,9 +1959,7 @@ export default function Dashboard() {
                         </div>
                       )
                     )}
-
-                    {/* Certificates Tab */}
-                    {activeTab === "certificates" && (
+                    {contractsSubTab === "certificates" && (
                       filteredCertificates.length === 0 ? (
                         <div className="text-center py-16 px-4">
                           <Award className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -1935,100 +2055,7 @@ export default function Dashboard() {
                         </div>
                       )
                     )}
-
-                    {/* Receipts Tab */}
-                    {activeTab === "receipts" && (
-                      filteredReceipts.length === 0 ? (
-                        <div className="text-center py-16 px-4">
-                          <DollarSign className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                          <h3 className="text-base font-bold text-slate-800">{language === "ar" ? "لا توجد سندات قبض" : "No Receipts Found"}</h3>
-                          <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-md mx-auto">
-                            {searchQuery ? (language === "ar" ? "لا توجد نتائج مطابقة." : "No matching receipts.") : (language === "ar" ? "أنشئ سندات قبض رسمية بالمبالغ المستلمة من العملاء." : "Create payment receipt vouchers.")}
-                          </p>
-                          {!searchQuery && (
-                            <Link
-                              href="/receipt/new"
-                              className="inline-flex items-center gap-2 mt-4 text-xs font-semibold bg-teal-600 hover:bg-teal-700 px-4 py-2 rounded-xl text-white shadow-sm"
-                            >
-                              <Plus className="w-4 h-4" /> {t("newReceipt")}
-                            </Link>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left border-collapse" dir={isRtl ? "rtl" : "ltr"}>
-                            <thead>
-                              <tr className="border-b border-slate-200 bg-slate-50/80 text-xs text-slate-600 font-semibold tracking-wider">
-                                <th className="py-3.5 px-5">{language === "ar" ? "رقم السند" : "Receipt No."}</th>
-                                <th className="py-3.5 px-5">{t("clientName")}</th>
-                                <th className="py-3.5 px-5">{language === "ar" ? "المستلم لأجله" : "Received For"}</th>
-                                <th className="py-3.5 px-5">{t("date")}</th>
-                                <th className="py-3.5 px-5 text-right">{language === "ar" ? "المبلغ المستلم" : "Amount"}</th>
-                                <th className="py-3.5 px-5 text-center">{t("actions")}</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-sm">
-                              {filteredReceipts.map((receipt) => (
-                                <tr key={receipt.id} className="hover:bg-slate-50/70 transition-colors group">
-                                  <td className="py-3.5 px-5 font-mono font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
-                                    {receipt.receiptNo}
-                                  </td>
-                                  <td className="py-3.5 px-5 font-medium text-slate-800">
-                                    {receipt.clientName}
-                                  </td>
-                                  <td className="py-3.5 px-5 text-slate-600 text-xs">
-                                    {receipt.receivedFor || "-"}
-                                  </td>
-                                  <td className="py-3.5 px-5 text-slate-500 text-xs">
-                                    {receipt.date}
-                                  </td>
-                                  <td className="py-3.5 px-5 text-right font-mono font-bold text-teal-700">
-                                    {Number(receipt.amount).toLocaleString("en-AE", { maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-500 font-sans">AED</span>
-                                  </td>
-                                  <td className="py-3.5 px-5 text-center">
-                                    <div className="flex items-center justify-center gap-1.5">
-                                      <Link
-                                        href={`/receipt/${receipt.id}/view`}
-                                        className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 transition-colors"
-                                        title={language === "ar" ? "معاينة السند" : "View"}
-                                      >
-                                        <ExternalLink className="w-4 h-4" />
-                                      </Link>
-                                      <a
-                                        href={`/receipt/${receipt.id}?print=true`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors"
-                                        title={language === "ar" ? "طباعة / تنزيل PDF" : "Print / PDF"}
-                                      >
-                                        <Printer className="w-4 h-4" />
-                                      </a>
-                                      <Link
-                                        href={`/receipt/${receipt.id}`}
-                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                        title={t("editTitle")}
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </Link>
-                                      <button
-                                        onClick={(e) => handleDeleteReceipt(receipt.id, e)}
-                                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                        title={t("deleteTitle")}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )
-                    )}
-
-                    {/* Official Letters Tab */}
-                    {activeTab === "letters" && (
+                    {contractsSubTab === "letters" && (
                       filteredLetters.length === 0 ? (
                         <div className="text-center py-16 px-4">
                           <Mail className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -2119,15 +2146,59 @@ export default function Dashboard() {
                         </div>
                       )
                     )}
-
-                    {/* Price List Catalog Tab */}
-                    {activeTab === "priceList" && (
-                      <div className="p-4 sm:p-6">
-                        <PriceListTable />
-                      </div>
-                    )}
                   </div>
                 </div>
+              )}
+
+              {/* Accounting & Finance Module */}
+              {mainModule === "accounting" && (
+                <AccountingModule
+                  quotations={quotations}
+                  receipts={receipts}
+                  expenses={expenses}
+                  projects={projects}
+                  journalEntries={journalEntries}
+                  onSaveExpense={handleSaveExpense}
+                  onDeleteExpense={handleDeleteExpense}
+                  onDeleteReceipt={handleDeleteReceipt}
+                  onSaveQuotation={handleSaveQuotation}
+                  onSaveReceipt={handleSaveReceipt}
+                  onSaveJournalEntry={handleSaveJournalEntry}
+                  onDeleteJournalEntry={handleDeleteJournalEntry}
+                />
+              )}
+
+              {/* HR & Payroll Module */}
+              {mainModule === "hr" && (
+                <HRModule
+                  employees={employees}
+                  attendance={attendance}
+                  payroll={payroll}
+                  projects={projects}
+                  settings={settings}
+                  onSaveEmployee={handleSaveEmployee}
+                  onDeleteEmployee={handleDeleteEmployee}
+                  onSaveAttendance={handleSaveAttendance}
+                  onDeleteAttendance={handleDeleteAttendance}
+                  onSavePayroll={handleSavePayroll}
+                  onSaveProject={handleSaveProject}
+                  onOpenPermissionsModal={() => setPermissionsModalOpen(true)}
+                />
+              )}
+
+              {/* Comprehensive Reports Module */}
+              {mainModule === "reports" && (
+                <ReportsModule
+                  quotations={quotations}
+                  contracts={contracts}
+                  receipts={receipts}
+                  expenses={expenses}
+                  employees={employees}
+                  attendance={attendance}
+                  payroll={payroll}
+                  projects={projects}
+                  settings={settings}
+                />
               )}
             </>
           )}
