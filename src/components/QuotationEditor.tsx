@@ -25,7 +25,7 @@ import {
   Layers
 } from "lucide-react";
 import PriceListPickerModal from "@/components/PriceListPickerModal";
-import { saveQuotation, getQuotation, getAllQuotations, Quotation, QuotationItem, PurchaseInvoice, getSettings, Settings, saveContract, getAllContracts } from "@/lib/db";
+import { saveQuotation, getQuotation, getAllQuotations, Quotation, QuotationItem, PurchaseInvoice, getSettings, Settings, saveContract, getAllContracts, Project, getAllProjects, saveProject, DEFAULT_PROJECT_MILESTONES, ProjectMilestone, ProjectSiteLog } from "@/lib/db";
 import { useLanguage } from "@/lib/i18n";
 import { generateZatcaTLV } from "@/lib/zatca";
 import { generateZATCAQRCodeDataURL } from "@/lib/taxCompliance";
@@ -514,6 +514,59 @@ ${itemLines}
         }
       } catch (contractErr) {
         console.error("Failed to auto-generate contract:", contractErr);
+      }
+
+      // Check and auto-create project
+      try {
+        const existingProjects = await getAllProjects().catch(() => []);
+        const alreadyHasProject = existingProjects.some(p => p.quotationId === updatedDoc.id || p.id === `proj-${updatedDoc.id}`);
+
+        if (!alreadyHasProject) {
+          const match = updatedDoc.quotationNo.match(/\d+/);
+          const suffix = match ? match[0] : String(Math.floor(Math.random() * 90000) + 10000);
+
+          const initialMilestones: ProjectMilestone[] = DEFAULT_PROJECT_MILESTONES.map((m, idx) => ({
+            id: `ms-${Date.now()}-${idx + 1}`,
+            title: m.title,
+            description: m.description,
+            status: idx === 0 ? "in_progress" : "pending",
+            targetDate: new Date(Date.now() + (idx + 1) * 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          }));
+
+          const initialLog: ProjectSiteLog = {
+            id: `log-${Date.now()}`,
+            date: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("ar-AE", { hour: "2-digit", minute: "2-digit" }),
+            author: "النظام الذكي",
+            activity: `تم اعتماد عرض السعر رقم (${updatedDoc.quotationNo}) بقيمة (${Number(updatedDoc.total || 0).toLocaleString()} AED) وإنشاء ملف المشروع تلقائياً.`,
+          };
+
+          const newProject: Project = {
+            id: `proj-${updatedDoc.id}`,
+            projectNo: `PRJ-${suffix}`,
+            title: updatedDoc.projectReference?.trim() || `مشروع ${updatedDoc.clientName} - أنظمة ذكية وكاميرات`,
+            clientName: updatedDoc.clientName,
+            clientPhone: updatedDoc.contactNo || "",
+            location: updatedDoc.locationArea || "الموقع الميداني",
+            status: "in_progress",
+            startDate: new Date().toISOString().split("T")[0],
+            targetEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            budget: Number(updatedDoc.total || 0),
+            contractId: `contract-${suffix}`,
+            quotationId: updatedDoc.id,
+            completionRate: 15,
+            milestones: initialMilestones,
+            siteLogs: [initialLog],
+            sitePhotos: [],
+            blueprints: [],
+            notes: `تم إنشاء المشروع آلياً بمجرد اعتماد عرض السعر رقم ${updatedDoc.quotationNo}.`,
+            createdAt: now,
+            updatedAt: now,
+          };
+
+          await saveProject(newProject);
+        }
+      } catch (projErr) {
+        console.error("Failed to auto-generate project in QuotationEditor:", projErr);
       }
     }
     return documentId;

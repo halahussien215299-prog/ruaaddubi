@@ -39,7 +39,8 @@ import {
   HardHat,
   BadgeCheck,
   Crown,
-  ShieldCheck
+  ShieldCheck,
+  ArrowRight
 } from "lucide-react";
 import {
   getAllQuotations,
@@ -79,6 +80,9 @@ import {
   getAllPayrollRecords,
   savePayrollRecord,
   Project,
+  ProjectMilestone,
+  ProjectSiteLog,
+  DEFAULT_PROJECT_MILESTONES,
   getAllProjects,
   saveProject,
   deleteProject,
@@ -322,6 +326,10 @@ export default function Dashboard() {
   const handleSaveQuotation = async (quote: Quotation) => {
     await saveQuotation(quote);
     setQuotations(prev => prev.map(q => q.id === quote.id ? quote : q));
+    if (quote.status === 'approved') {
+      const projs = await getAllProjects().catch(() => []);
+      setProjects(projs);
+    }
   };
 
   const handleDeleteQuotation = async (id: string, e?: React.MouseEvent) => {
@@ -531,6 +539,60 @@ export default function Dashboard() {
           await saveCertificate(newCertificate);
           const certs = await getAllCertificates();
           setCertificates(certs);
+        }
+
+        // 4. Auto Project Generation
+        const existingProjects = await getAllProjects().catch(() => []);
+        const alreadyHasProject = existingProjects.some(p => p.quotationId === quote.id || p.id === `proj-${quote.id}`);
+
+        if (!alreadyHasProject) {
+          const projectNo = "PRJ-" + suffix;
+          const projectTitle = quote.projectReference?.trim() || `مشروع ${quote.clientName} - أنظمة ذكية وكاميرات`;
+
+          const initialMilestones: ProjectMilestone[] = DEFAULT_PROJECT_MILESTONES.map((m, idx) => ({
+            id: `ms-${Date.now()}-${idx + 1}`,
+            title: m.title,
+            description: m.description,
+            status: idx === 0 ? "in_progress" : "pending",
+            targetDate: new Date(Date.now() + (idx + 1) * 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          }));
+
+          const initialLog: ProjectSiteLog = {
+            id: `log-${Date.now()}`,
+            date: new Date().toLocaleDateString("en-GB") + " " + new Date().toLocaleTimeString("ar-AE", { hour: "2-digit", minute: "2-digit" }),
+            author: "النظام الذكي",
+            activity: `تم اعتماد عرض السعر رقم (${quote.quotationNo}) بقيمة (${Number(quote.total || 0).toLocaleString()} AED) وإنشاء المشروع تلقائياً وبدء مرحلة المعاينة الميدانية.`,
+          };
+
+          const newProject: Project = {
+            id: `proj-${quote.id}`,
+            projectNo,
+            title: projectTitle,
+            clientName: quote.clientName,
+            clientPhone: quote.contactNo || "",
+            location: quote.locationArea || "الموقع الميداني",
+            status: "in_progress",
+            startDate: new Date().toISOString().split("T")[0],
+            targetEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            budget: Number(quote.total || 0),
+            contractId: `contract-${suffix}`,
+            quotationId: quote.id,
+            completionRate: 15,
+            milestones: initialMilestones,
+            siteLogs: [initialLog],
+            sitePhotos: [],
+            blueprints: [],
+            notes: `تم إنشاء المشروع آلياً بمجرد اعتماد عرض السعر رقم ${quote.quotationNo}. جاهز للتوثيق الميداني والمخططات ومتابعة الفنيين.`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          await saveProject(newProject);
+          const projs = await getAllProjects();
+          setProjects(projs);
+        } else {
+          const projs = await getAllProjects();
+          setProjects(projs);
         }
 
         // Trigger Instant Dual Invoicing & Companion Docs Modal
@@ -2096,6 +2158,46 @@ export default function Dashboard() {
               >
                 <X size={16} />
               </button>
+            </div>
+
+            <div className="p-3.5 bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Building2 size={20} />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-purple-950">
+                    🏗️ تم إدراج المشروع تلقائياً في المشاريع الميدانية!
+                  </h4>
+                  <p className="text-[11px] text-purple-700/80">
+                    رقم المشروع: <span className="font-mono font-bold">PRJ-{approvedQuoteModal.suffix}</span> - تم بدء مراحل التنفيذ وجدولة المهام.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApprovedQuoteModal(null);
+                    setMainModule("projects");
+                  }}
+                  className="px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs"
+                >
+                  <span>عرض في المشاريع</span>
+                  <ArrowRight size={13} className="rotate-180" />
+                </button>
+
+                <a
+                  href={`/track/proj-${approvedQuoteModal.quote.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                >
+                  <ExternalLink size={13} />
+                  <span>تتبع العميل</span>
+                </a>
+              </div>
             </div>
 
             <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-900 leading-relaxed font-medium">

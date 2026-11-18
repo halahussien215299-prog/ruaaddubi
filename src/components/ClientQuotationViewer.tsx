@@ -238,6 +238,86 @@ export default function ClientQuotationViewer({ id }: ClientQuotationViewerProps
         })
       }).catch(console.error);
 
+      // Create Project
+      const initialMilestones = [
+        {
+          id: `ms-${Date.now()}-1`,
+          title: "1. المعاينة الفنية وتخطيط مسارات الكابلات والموقع",
+          description: "فحص موقع العميل، مراجعة المخططات الهندسية وتحديد أماكن الكاميرات والأجهزة ونقاط التغذية.",
+          status: "in_progress",
+          targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+        },
+        {
+          id: `ms-${Date.now()}-2`,
+          title: "2. توريد وتجهيز الأجهزة والمعدات والكاميرات",
+          description: "توريد الكاميرات، مسجلات الفيديو NVR، السويتشات PoE، كبائن التوزيع، وحساسات البيت الذكي.",
+          status: "pending",
+          targetDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+        },
+        {
+          id: `ms-${Date.now()}-3`,
+          title: "3. التمديدات والتأسيسات الأولية (First Fix)",
+          description: "سحب كابلات الشبكة Cat6، تركيب المواسير والترانك PVC، وتجهيز لوحات التوزيع.",
+          status: "pending",
+          targetDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+        },
+        {
+          id: `ms-${Date.now()}-4`,
+          title: "4. تركيب وتثبيت الكاميرات والأجهزة الذكية (Second Fix)",
+          description: "تثبيت الكاميرات وضبط زوايا الرؤية، تركيب الشاشات، أقفال الأبواب الذكية وحساسات الحركة.",
+          status: "pending",
+          targetDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+        },
+        {
+          id: `ms-${Date.now()}-5`,
+          title: "5. البرمجة والربط بالشبكة وتطبيق الهاتف والتشغيل",
+          description: "برمجة أجهزة التسجيل، ضبط كشف الحركة والإنذارات، والربط بتطبيق الجوال لمتابعة البث الحي.",
+          status: "pending",
+          targetDate: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+        },
+        {
+          id: `ms-${Date.now()}-6`,
+          title: "6. الفحص النهائي وتدريب العميل والتسليم (Handover)",
+          description: "تسليم النظام، تدريب العميل على التشغيل، وتوقيع شهادة إتمام العمل والضمان.",
+          status: "pending",
+          targetDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+        }
+      ];
+
+      const initialLog = {
+        id: `log-${Date.now()}`,
+        date: todayStr + " " + new Date().toLocaleTimeString("ar-AE", { hour: "2-digit", minute: "2-digit" }),
+        author: signerName || "العميل",
+        activity: `قام العميل بالتوقيع الرقمي واعتماد عرض السعر رقم (${quoteNo})، وتم إنشاء ملف المشروع تلقائياً وبدء مراحل العمل الميداني.`
+      };
+
+      await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: `proj-${updatedQuote.id}`,
+          projectNo: `PRJ-${suffix}`,
+          title: updatedQuote.projectReference?.trim() || `مشروع ${updatedQuote.clientName} - أنظمة ذكية وكاميرات`,
+          clientName: updatedQuote.clientName,
+          clientPhone: signerPhone || updatedQuote.contactNo || "",
+          location: updatedQuote.location || updatedQuote.locationArea || "الموقع الميداني",
+          status: "in_progress",
+          startDate: new Date().toISOString().split("T")[0],
+          targetEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          budget: Number(updatedQuote.total || 0),
+          quotationId: updatedQuote.id,
+          contractId: `contract-${suffix}`,
+          completionRate: 15,
+          milestones: initialMilestones,
+          siteLogs: [initialLog],
+          sitePhotos: [],
+          blueprints: [],
+          notes: `تم إنشاء المشروع آلياً إثر توقيع واعتماد العميل (${signerName}) لعرض السعر رقم ${quoteNo}.`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        })
+      }).catch(console.error);
+
       setQuotation(updatedQuote);
       setShowApprovalModal(false);
       setApprovalSuccess(true);

@@ -10,7 +10,7 @@ export async function GET(
     const client = await clientPromise;
     const db = client.db('ruaad_smart_dubai_db');
     const project = await db.collection('projects').findOne({
-      $or: [{ id }, { projectNo: id }]
+      $or: [{ id }, { projectNo: id }, { quotationId: id }, { id: `proj-${id}` }]
     });
 
     if (!project) {
