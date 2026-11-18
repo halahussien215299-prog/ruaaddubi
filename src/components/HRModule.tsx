@@ -69,6 +69,7 @@ interface HRModuleProps {
   onSaveAttendance: (record: AttendanceRecord) => Promise<void>;
   onDeleteAttendance: (id: string) => Promise<void>;
   onSavePayroll: (record: PayrollRecord) => Promise<void>;
+  onDeletePayroll?: (id: string) => Promise<void>;
   onSaveProject?: (project: Project) => Promise<void>;
   onOpenPermissionsModal?: () => void;
 }
@@ -84,6 +85,7 @@ export default function HRModule({
   onSaveAttendance,
   onDeleteAttendance,
   onSavePayroll,
+  onDeletePayroll,
   onSaveProject,
   onOpenPermissionsModal,
 }: HRModuleProps) {
@@ -215,7 +217,8 @@ export default function HRModule({
   const todayDailyWorkers = todayAttendance.filter(a => a.employmentType === "daily" || (a.dailyWage && a.dailyWage > 0));
   const totalTodayDailyWages = todayDailyWorkers.reduce((sum, a) => sum + (Number(a.dailyWage) || 0), 0);
 
-  const currentMonthPayroll = payroll.filter(p => p.month === selectedMonth);
+  // Only include payroll records of currently active employees (auto-excludes deleted employees)
+  const currentMonthPayroll = payroll.filter(p => p.month === selectedMonth && employees.some(e => e.id === p.employeeId));
   const totalMonthlyPayrollCost = currentMonthPayroll.reduce((sum, p) => sum + (p.netSalary || 0), 0);
   const totalMonthlyBonuses = currentMonthPayroll.reduce((sum, p) => sum + (p.bonus || 0), 0);
 
@@ -1432,6 +1435,15 @@ export default function HRModule({
                           >
                             تفاصيل
                           </button>
+                          {onDeletePayroll && (
+                            <button
+                              onClick={() => onDeletePayroll(rec.id)}
+                              className="p-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 transition cursor-pointer border border-rose-200"
+                              title={language === "ar" ? "حذف من مسير هذا الشهر" : "Delete record"}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

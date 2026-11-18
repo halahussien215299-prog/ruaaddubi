@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowRight,
   Info,
   BadgePercent,
   QrCode
@@ -82,8 +83,8 @@ export default function AccountingModule({
 }: AccountingModuleProps) {
   const { language, isRtl } = useLanguage();
 
-  // Navigation Sub-Tabs: advisor (المحاسب المالي الذكي), reports (التقارير المالية), invoices, receipts, expenses
-  const [activeMainTab, setActiveMainTab] = useState<"advisor" | "reports" | "invoices" | "receipts" | "expenses">("advisor");
+  // Navigation Sub-Tabs: summary (الملخص المالي), invoices, receipts, expenses, reports, advisor
+  const [activeMainTab, setActiveMainTab] = useState<"summary" | "invoices" | "receipts" | "expenses" | "reports" | "advisor">("summary");
   const [reportSubTab, setReportSubTab] = useState<"pl" | "balance_sheet" | "trial_balance" | "vat_return" | "cash_flow" | "chart_accounts">("pl");
   const [reportPeriod, setReportPeriod] = useState<"all" | "q1" | "q2" | "q3" | "q4" | "this_month" | "year_2026">("all");
   
@@ -467,109 +468,406 @@ export default function AccountingModule({
       `}</style>
 
       {/* Top Main Navigation Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 font-arabic">
         <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-xl">
-          {/* TAB 1: Virtual CFO Advisor */}
+          {/* TAB 1: Financial Summary (Default) */}
           <button
-            onClick={() => setActiveMainTab("advisor")}
+            onClick={() => setActiveMainTab("summary")}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeMainTab === "advisor"
-                ? "bg-white text-purple-900 shadow-xs border border-purple-200"
+              activeMainTab === "summary"
+                ? "bg-white text-purple-900 shadow-xs border border-purple-200 font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <div className="w-5 h-5 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center">
-              <Bot className="w-3.5 h-3.5" />
-            </div>
-            <span>{language === "ar" ? "المحاسب المالي الذكي (CFO)" : "Virtual CFO Advisor"}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 text-purple-800 font-mono font-bold">
-              نشط
-            </span>
+            <PieChart className="w-4 h-4 text-purple-600" />
+            <span>{language === "ar" ? "الملخص المالي" : "Summary"}</span>
           </button>
 
-          {/* TAB 2: Professional Financial Reports */}
-          <button
-            onClick={() => setActiveMainTab("reports")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeMainTab === "reports"
-                ? "bg-white text-blue-900 shadow-xs border border-blue-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <div className="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center">
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-            </div>
-            <span>{language === "ar" ? "التقارير والقوائم المالية" : "Financial Statements"}</span>
-          </button>
-
-          {/* TAB 3: Invoices */}
+          {/* TAB 2: Invoices */}
           <button
             onClick={() => setActiveMainTab("invoices")}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeMainTab === "invoices"
-                ? "bg-white text-slate-900 shadow-xs border border-slate-200"
+                ? "bg-white text-slate-900 shadow-xs border border-slate-200 font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <ReceiptIcon className="w-3.5 h-3.5 text-slate-500" />
-            <span>{language === "ar" ? "الفواتير الضريبية والبيانات" : "Invoices"}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 font-mono">
+            <ReceiptIcon className="w-4 h-4 text-indigo-600" />
+            <span>{language === "ar" ? "الفواتير والمطالبات" : "Invoices"}</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 font-mono font-bold">
               {quotations.length}
             </span>
           </button>
 
-          {/* TAB 4: Receipts */}
+          {/* TAB 3: Receipts */}
           <button
             onClick={() => setActiveMainTab("receipts")}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeMainTab === "receipts"
-                ? "bg-white text-emerald-900 shadow-xs border border-emerald-200"
+                ? "bg-white text-emerald-900 shadow-xs border border-emerald-200 font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{language === "ar" ? "سندات القبض" : "Receipts"}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-mono">
+            <DollarSign className="w-4 h-4 text-emerald-600" />
+            <span>{language === "ar" ? "سندات القبض (التحصيلات)" : "Receipts"}</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-mono font-bold">
               {receipts.length}
             </span>
           </button>
 
-          {/* TAB 5: Expenses & Journal */}
+          {/* TAB 4: Expenses & Journal */}
           <button
             onClick={() => setActiveMainTab("expenses")}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeMainTab === "expenses"
-                ? "bg-white text-rose-900 shadow-xs border border-rose-200"
+                ? "bg-white text-rose-900 shadow-xs border border-rose-200 font-black"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <CreditCard className="w-3.5 h-3.5 text-rose-600" />
-            <span>{language === "ar" ? "سندات الصرف واليومية" : "Expenses & Journal"}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-800 font-mono">
+            <CreditCard className="w-4 h-4 text-rose-600" />
+            <span>{language === "ar" ? "سندات الصرف (المصروفات)" : "Expenses"}</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-800 font-mono font-bold">
               {expenses.length}
             </span>
+          </button>
+
+          {/* TAB 5: VAT & Financial Statements */}
+          <button
+            onClick={() => setActiveMainTab("reports")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === "reports"
+                ? "bg-white text-blue-900 shadow-xs border border-blue-200 font-black"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+            <span>{language === "ar" ? "الضريبة والتقارير المالية" : "VAT & Reports"}</span>
+          </button>
+
+          {/* TAB 6: Virtual CFO Advisor */}
+          <button
+            onClick={() => setActiveMainTab("advisor")}
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeMainTab === "advisor"
+                ? "bg-white text-purple-900 shadow-xs border border-purple-200 font-black"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Bot className="w-3.5 h-3.5 text-purple-600" />
+            <span>المحاسب الذكي</span>
           </button>
         </div>
 
         {/* Global Action Shortcut Buttons */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowAddExpenseModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition cursor-pointer"
+            onClick={() => setShowQuickReceiptModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>{language === "ar" ? "سند صرف" : "New Expense"}</span>
+            <span>{language === "ar" ? "سند قبض جديد" : "New Receipt"}</span>
           </button>
 
           <button
-            onClick={() => setShowQuickReceiptModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold border border-emerald-200 transition cursor-pointer"
+            onClick={() => setShowAddExpenseModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>{language === "ar" ? "سند تحصيل" : "Quick Receipt"}</span>
+            <span>{language === "ar" ? "سند صرف جديد" : "New Expense"}</span>
           </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 0. TAB: FINANCIAL SUMMARY & EXECUTIVE OVERVIEW (الملخص المالي والسيولة)     */}
+      {/* ========================================================================= */}
+      {activeMainTab === "summary" && (
+        <div className="space-y-6 font-arabic">
+          {/* Welcome & Financial Status Banner */}
+          <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-indigo-950 text-white rounded-3xl p-6 sm:p-7 shadow-lg relative overflow-hidden">
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-purple-200 text-xs font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>المركز المالي لرواد سمارت - تدقيق فوري ومباشر</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white">
+                  الملخص المالي العام والسيولة النقدية 💰
+                </h2>
+                <p className="text-xs sm:text-sm text-purple-200/80 max-w-2xl leading-relaxed">
+                  نظرة مباشرة وسريعة على مبيعات الشركة، المقبوضات النقدية والبنكية، المستحقات المعلقة في السوق، وإجمالي المصروفات وصافي الأرباح.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setShowQuickReceiptModal(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition shadow-md cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>تسجيل سند قبض</span>
+                </button>
+                <button
+                  onClick={() => setShowAddExpenseModal(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm transition shadow-md cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>تسجيل سند صرف</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 4 Core Financial KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 1. Total Invoiced / Contracted */}
+            <div
+              onClick={() => setActiveMainTab("invoices")}
+              className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">إجمالي المبيعات والعقود</span>
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ReceiptIcon className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-mono text-purple-900 mt-2">
+                {totalApprovedInvoiceAmount.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500 font-normal">AED</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-purple-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                <span>{approvedQuotes.length} فواتير وعقود معتمدة</span>
+                <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 2. Collected Inflow */}
+            <div
+              onClick={() => setActiveMainTab("receipts")}
+              className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">المقبوضات المحصلة (كاش/بنك)</span>
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <DollarSign className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 mt-2">
+                {totalReceiptsAmount.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500 font-normal">AED</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-emerald-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                <span>{receipts.length} سندات قبض مستلمة</span>
+                <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 3. Uncollected Receivables */}
+            <div
+              onClick={() => setActiveMainTab("invoices")}
+              className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">المتبقي في السوق (ذمم العملاء)</span>
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Wallet className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-mono text-amber-800 mt-2">
+                {totalAccountsReceivable.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500 font-normal">AED</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-amber-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                <span>مستحقات معلقة قيد التحصيل</span>
+                <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 4. Total Expenses */}
+            <div
+              onClick={() => setActiveMainTab("expenses")}
+              className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:border-rose-300 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500">المصروفات والتكاليف</span>
+                <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-mono text-rose-700 mt-2">
+                {totalExpensesAmount.toLocaleString("en-AE", { maximumFractionDigits: 0 })} <span className="text-xs font-sans text-slate-500 font-normal">AED</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-rose-700 font-bold mt-3 pt-2.5 border-t border-slate-100">
+                <span>{expenses.length} سندات صرف ومشتريات</span>
+                <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </div>
+
+          {/* Financial Breakdown & Net Profit Summary Banner */}
+          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200/80 rounded-2xl p-5 shadow-2xs">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-700" />
+                  <h3 className="font-black text-sm text-emerald-950">معادلة الأرباح والسيولة النقدية المباشرة</h3>
+                </div>
+                <p className="text-xs text-emerald-800/80">
+                  إجمالي دخل العقود ({totalApprovedInvoiceAmount.toLocaleString()} AED) مطروحاً منه المصروفات والتكاليف ({totalExpensesAmount.toLocaleString()} AED).
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="bg-white px-4 py-2 rounded-xl border border-emerald-200 shadow-2xs">
+                  <span className="block text-[11px] text-slate-500 font-semibold">صافي الربح التقديري</span>
+                  <span className="font-mono font-black text-base text-emerald-700">
+                    {netOperatingProfit.toLocaleString("en-AE", { maximumFractionDigits: 0 })} AED
+                  </span>
+                  <span className="text-[10px] text-emerald-600 font-bold mr-1">({netMarginPercent}%)</span>
+                </div>
+
+                <div className="bg-white px-4 py-2 rounded-xl border border-teal-200 shadow-2xs">
+                  <span className="block text-[11px] text-slate-500 font-semibold">السيولة النقدية المتوفرة (كاش/بنك)</span>
+                  <span className="font-mono font-black text-base text-teal-800">
+                    {netCashFlow.toLocaleString("en-AE", { maximumFractionDigits: 0 })} AED
+                  </span>
+                </div>
+
+                <div className="bg-white px-4 py-2 rounded-xl border border-indigo-200 shadow-2xs">
+                  <span className="block text-[11px] text-slate-500 font-semibold">ضريبة 5% المستحقة (FTA)</span>
+                  <span className="font-mono font-black text-base text-indigo-800">
+                    {netVatPayableToFTA.toLocaleString("en-AE", { maximumFractionDigits: 0 })} AED
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2-Column Stream of Latest Movements */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Receipts Stream */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden flex flex-col">
+              <div className="p-4 sm:p-5 border-b border-slate-150 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4.5 h-4.5 text-emerald-600" />
+                  <h4 className="font-bold text-sm text-slate-900">أحدث سندات القبض والتحصيلات</h4>
+                </div>
+                <button
+                  onClick={() => setActiveMainTab("receipts")}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>عرض الكل ({receipts.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-5 flex-1 divide-y divide-slate-100 space-y-3">
+                {receipts.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400">
+                    <DollarSign className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs">لم يتم تسجيل أي سندات قبض بعد.</p>
+                    <button
+                      onClick={() => setShowQuickReceiptModal(true)}
+                      className="mt-2.5 px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg cursor-pointer"
+                    >
+                      ➕ تسجيل أول سند قبض
+                    </button>
+                  </div>
+                ) : (
+                  receipts.slice(0, 5).map((r) => (
+                    <div key={r.id} className="pt-3 first:pt-0 flex items-center justify-between gap-3">
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-emerald-800">{r.receiptNo}</span>
+                          <span className="font-bold text-xs text-slate-900 truncate">{r.clientName}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          <span>{r.date}</span>
+                          <span className="mx-1">•</span>
+                          <span>{r.paymentMethod === "bank" ? "تحويل بنكي" : r.paymentMethod === "cheque" ? "شيك" : "نقداً"}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono font-bold text-xs text-emerald-700">
+                          {Number(r.amount).toLocaleString()} AED
+                        </span>
+                        <a
+                          href={`/receipt/${r.id}?print=true`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                          title="طباعة السند"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Expenses Stream */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden flex flex-col">
+              <div className="p-4 sm:p-5 border-b border-slate-150 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4.5 h-4.5 text-rose-600" />
+                  <h4 className="font-bold text-sm text-slate-900">أحدث المصروفات وسندات الصرف</h4>
+                </div>
+                <button
+                  onClick={() => setActiveMainTab("expenses")}
+                  className="text-xs font-bold text-rose-700 hover:text-rose-900 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>عرض الكل ({expenses.length})</span>
+                  <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-5 flex-1 divide-y divide-slate-100 space-y-3">
+                {expenses.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400">
+                    <CreditCard className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs">لم يتم تسجيل أي سندات صرف بعد.</p>
+                    <button
+                      onClick={() => setShowAddExpenseModal(true)}
+                      className="mt-2.5 px-3 py-1 bg-rose-600 text-white text-xs font-bold rounded-lg cursor-pointer"
+                    >
+                      ➕ تسجيل أول سند صرف
+                    </button>
+                  </div>
+                ) : (
+                  expenses.slice(0, 5).map((e) => (
+                    <div key={e.id} className="pt-3 first:pt-0 flex items-center justify-between gap-3">
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-rose-800">{e.voucherNo}</span>
+                          <span className="font-bold text-xs text-slate-900 truncate">{e.recipient}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          <span>{e.date}</span>
+                          <span className="mx-1">•</span>
+                          <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 text-[10px]">
+                            {e.category === "materials" ? "مشتريات مواد" : e.category === "salaries" ? "رواتب" : e.category === "tools" ? "معدات" : e.category === "rent" ? "إيجار" : "مصروفات عامة"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono font-bold text-xs text-rose-700">
+                          {Number(e.amount).toLocaleString()} AED
+                        </span>
+                        <button
+                          onClick={() => onDeleteExpense(e.id)}
+                          className="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition cursor-pointer"
+                          title="حذف"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 1. TAB: VIRTUAL CFO & FINANCIAL ACCOUNTANT ADVISOR (المحاسب المالي الذكي)   */}

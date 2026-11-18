@@ -81,6 +81,7 @@ import {
   PayrollRecord,
   getAllPayrollRecords,
   savePayrollRecord,
+  deletePayrollRecord,
   Project,
   ProjectMilestone,
   ProjectSiteLog,
@@ -292,9 +293,32 @@ export default function Dashboard() {
   };
 
   const handleDeleteEmployee = async (id: string) => {
-    if (confirm(language === "ar" ? "هل أنت متأكد من حذف بيانات هذا الموظف؟" : "Are you sure you want to delete this employee?")) {
-      await deleteEmployee(id);
-      setEmployees(prev => prev.filter(e => e.id !== id));
+    if (confirm(language === "ar" ? "هل أنت متأكد من حذف بيانات هذا الموظف؟ سيتم فوراً حذف كافة سجلاته ومسير رواتبه وأيامه وحضوره بالكامل." : "Are you sure you want to delete this employee? All payroll and attendance records will be removed immediately.")) {
+      try {
+        await deleteEmployee(id);
+        setEmployees(prev => prev.filter(e => e.id !== id));
+        setPayroll(prev => prev.filter(p => p.employeeId !== id));
+        setAttendance(prev => prev.filter(a => a.employeeId !== id));
+        setProjects(prev => prev.map(p => ({
+          ...p,
+          assignedEmployees: (p.assignedEmployees || []).filter(empId => empId !== id)
+        })));
+      } catch (err) {
+        console.error("Failed to delete employee:", err);
+        alert(language === "ar" ? "حدث خطأ أثناء حذف الموظف" : "Failed to delete employee");
+      }
+    }
+  };
+
+  const handleDeletePayroll = async (id: string) => {
+    if (confirm(language === "ar" ? "هل أنت متأكد من حذف سجل الراتب هذا؟" : "Are you sure you want to delete this payroll record?")) {
+      try {
+        await deletePayrollRecord(id);
+        setPayroll(prev => prev.filter(p => p.id !== id));
+      } catch (err) {
+        console.error("Failed to delete payroll record:", err);
+        alert(language === "ar" ? "حدث خطأ أثناء حذف سجل الراتب" : "Failed to delete payroll record");
+      }
     }
   };
 
@@ -783,9 +807,8 @@ export default function Dashboard() {
       )}
 
       {/* Modern Fixed Sidebar */}
-      <aside className={`fixed inset-y-0 ${isRtl ? "right-0" : "left-0"} z-50 w-72 bg-white border-${isRtl ? "l" : "r"} border-slate-200 flex flex-col justify-between transform transition-transform duration-300 lg:translate-x-0 ${
-        mobileMenuOpen ? "translate-x-0 shadow-2xl" : (isRtl ? "translate-x-full" : "-translate-x-full")
-      }`}>
+      <aside className={`fixed inset-y-0 ${isRtl ? "right-0" : "left-0"} z-50 w-72 bg-white border-${isRtl ? "l" : "r"} border-slate-200 flex flex-col justify-between transform transition-transform duration-300 lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0 shadow-2xl" : (isRtl ? "translate-x-full" : "-translate-x-full")
+        }`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Brand Header */}
           <div className="p-5 border-b border-slate-150 flex items-center justify-between">
@@ -831,20 +854,18 @@ export default function Dashboard() {
                       setMainModule(m.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-purple-700 text-white shadow-xs font-black"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${isSelected
+                      ? "bg-purple-700 text-white shadow-xs font-black"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Icon className={`w-4.5 h-4.5 ${isSelected ? "text-white" : m.color}`} />
                       <span>{m.label}</span>
                     </div>
                     {m.badge !== null && (
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
-                        isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
                         {m.badge}
                       </span>
                     )}
@@ -868,20 +889,18 @@ export default function Dashboard() {
                       setMainModule(m.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-purple-700 text-white shadow-xs font-black"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${isSelected
+                      ? "bg-purple-700 text-white shadow-xs font-black"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Icon className={`w-4.5 h-4.5 ${isSelected ? "text-white" : m.color}`} />
                       <span>{m.label}</span>
                     </div>
                     {m.badge !== null && (
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
-                        isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}>
                         {m.badge}
                       </span>
                     )}
@@ -1001,11 +1020,10 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => handleSwitchRole("admin")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  currentRole === "admin"
-                    ? "bg-white text-purple-900 shadow-2xs font-extrabold"
-                    : "text-slate-500 hover:text-slate-900"
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${currentRole === "admin"
+                  ? "bg-white text-purple-900 shadow-2xs font-extrabold"
+                  : "text-slate-500 hover:text-slate-900"
+                  }`}
                 title="لوحة تحكم الإدارة العليا"
               >
                 👑 الإدارة
@@ -1013,11 +1031,10 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => handleSwitchRole("operations")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  currentRole === "operations"
-                    ? "bg-white text-blue-900 shadow-2xs font-extrabold"
-                    : "text-slate-500 hover:text-slate-900"
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${currentRole === "operations"
+                  ? "bg-white text-blue-900 shadow-2xs font-extrabold"
+                  : "text-slate-500 hover:text-slate-900"
+                  }`}
                 title="الموظف الإداري والعمليات"
               >
                 📋 العمليات
@@ -1025,11 +1042,10 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => handleSwitchRole("accounting")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  currentRole === "accounting"
-                    ? "bg-white text-emerald-900 shadow-2xs font-extrabold"
-                    : "text-slate-500 hover:text-slate-900"
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${currentRole === "accounting"
+                  ? "bg-white text-emerald-900 shadow-2xs font-extrabold"
+                  : "text-slate-500 hover:text-slate-900"
+                  }`}
                 title="الحسابات والمالية"
               >
                 💰 الحسابات
@@ -1480,9 +1496,8 @@ export default function Dashboard() {
                                   <div className="flex items-center gap-2">
                                     <span className="font-mono text-xs font-bold text-purple-700">{q.quotationNo}</span>
                                     <h4 className="font-bold text-xs text-slate-900 truncate">{q.clientName}</h4>
-                                    <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${
-                                      isApproved ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"
-                                    }`}>
+                                    <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${isApproved ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+                                      }`}>
                                       {isApproved ? "معتمد" : "قيد المتابعة"}
                                     </span>
                                   </div>
@@ -1546,34 +1561,30 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setSalesSubTab("quotations")}
-                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          salesSubTab === "quotations"
-                            ? "bg-purple-700 text-white shadow-xs"
-                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-                        }`}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${salesSubTab === "quotations"
+                          ? "bg-purple-700 text-white shadow-xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
                       >
                         <FileText className="w-4 h-4" />
                         <span>عروض الأسعار</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
-                          salesSubTab === "quotations" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${salesSubTab === "quotations" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                          }`}>
                           {quotations.length}
                         </span>
                       </button>
 
                       <button
                         onClick={() => setSalesSubTab("priceList")}
-                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          salesSubTab === "priceList"
-                            ? "bg-purple-700 text-white shadow-xs"
-                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-                        }`}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${salesSubTab === "priceList"
+                          ? "bg-purple-700 text-white shadow-xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
                       >
                         <Layers className="w-4 h-4" />
                         <span>دليل الأصناف والأسعار (الكتالوج)</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
-                          salesSubTab === "priceList" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${salesSubTab === "priceList" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                          }`}>
                           {PRICE_LIST_ITEMS.length}
                         </span>
                       </button>
@@ -1602,9 +1613,8 @@ export default function Dashboard() {
                             placeholder={t("searchPlaceholder")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`w-full bg-slate-50 border border-slate-200 rounded-xl ${
-                              isRtl ? "pr-10 pl-4" : "pl-10 pr-4"
-                            } py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20`}
+                            className={`w-full bg-slate-50 border border-slate-200 rounded-xl ${isRtl ? "pr-10 pl-4" : "pl-10 pr-4"
+                              } py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600/20`}
                           />
                         </div>
 
@@ -1616,140 +1626,140 @@ export default function Dashboard() {
                       {/* Quotations Table */}
                       <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
                         {
-                      filteredQuotations.length === 0 ? (
-                        <div className="text-center py-16 px-4">
-                          <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                          <h3 className="text-base font-bold text-slate-800">{t("noQuotesFound")}</h3>
-                          <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-md mx-auto">
-                            {searchQuery ? (language === "ar" ? "لا توجد نتائج مطابقة لبحثك." : "No quotations match your search.") : (language === "ar" ? "ابدأ بإنشاء أول عرض سعر احترافي لعملائك." : "Start by creating your first quotation.")}
-                          </p>
-                          {!searchQuery && (
-                            <Link
-                              href="/quotation/new"
-                              className="inline-flex items-center gap-2 mt-4 text-xs font-semibold bg-purple-700 hover:bg-purple-800 px-4 py-2 rounded-xl text-white shadow-sm"
-                            >
-                              <Plus className="w-4 h-4" /> {t("newQuotation")}
-                            </Link>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left border-collapse" dir={isRtl ? "rtl" : "ltr"}>
-                            <thead>
-                              <tr className="border-b border-slate-200 bg-slate-50/80 text-xs text-slate-600 font-semibold tracking-wider">
-                                <th className="py-3.5 px-5">{t("quoteNo")}</th>
-                                <th className="py-3.5 px-5">{t("clientName")}</th>
-                                <th className="py-3.5 px-5">{t("date")}</th>
-                                <th className="py-3.5 px-5 text-right">{t("total")}</th>
-                                <th className="py-3.5 px-5 text-center">{t("status")}</th>
-                                <th className="py-3.5 px-5 text-center">{t("actions")}</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-sm">
-                              {filteredQuotations.map((quote) => {
-                                const statusBg =
-                                  quote.status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                                    quote.status === "executed" ? "bg-purple-50 text-purple-700 border-purple-200" :
-                                      quote.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
-                                        quote.status === "cancelled" ? "bg-slate-100 text-slate-600 border-slate-200" :
-                                          "bg-amber-50 text-amber-700 border-amber-200";
-
-                                return (
-                                  <tr key={quote.id} className="hover:bg-slate-50/70 transition-colors group">
-                                    <td className="py-3.5 px-5 font-mono font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
-                                      {quote.quotationNo}
-                                    </td>
-                                    <td className="py-3.5 px-5 font-medium text-slate-800">
-                                      <div>{quote.clientName}</div>
-                                      {quote.projectReference && (
-                                        <div className="text-[11px] text-slate-400 font-normal">{quote.projectReference}</div>
-                                      )}
-                                    </td>
-                                    <td className="py-3.5 px-5 text-slate-500 text-xs">
-                                      {quote.date}
-                                    </td>
-                                    <td className="py-3.5 px-5 text-right font-mono font-bold text-slate-900">
-                                      {quote.total.toLocaleString("en-AE", { maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-500 font-sans">AED</span>
-                                    </td>
-                                    <td className="py-3.5 px-5 text-center">
-                                      <select
-                                        disabled={statusChanging === quote.id}
-                                        value={quote.status || "pending"}
-                                        onChange={(e) => handleStatusChange(quote, e.target.value as any)}
-                                        className={`text-xs font-semibold rounded-lg px-2.5 py-1 border outline-none cursor-pointer ${statusBg}`}
-                                      >
-                                        <option value="pending">{t("statusPending")}</option>
-                                        <option value="approved">{t("statusApproved")}</option>
-                                        <option value="executed">{t("statusExecuted")}</option>
-                                        <option value="rejected">{t("statusRejected")}</option>
-                                        <option value="cancelled">{t("statusCancelled")}</option>
-                                      </select>
-                                    </td>
-                                    <td className="py-3.5 px-5 text-center">
-                                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                        {/* Dual Instant Invoice Buttons if Approved */}
-                                        {quote.status === "approved" && (
-                                          <>
-                                            <a
-                                              href={`/quotation/${quote.id || quote.quotationNo}?view=invoice&type=standard&print=true`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="px-2 py-1 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition border border-indigo-200"
-                                              title="استعراض / طباعة الفاتورة العادية (0% بيان أسعار)"
-                                            >
-                                              📄 عادية
-                                            </a>
-                                            <a
-                                              href={`/quotation/${quote.id || quote.quotationNo}?view=invoice&type=tax&print=true`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="px-2 py-1 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-[10px] transition border border-purple-200"
-                                              title="استعراض / طباعة الفاتورة الضريبية (5% VAT)"
-                                            >
-                                              🧾 ضريبية
-                                            </a>
-                                          </>
-                                        )}
-
-                                        <Link
-                                          href={`/quotation/${quote.id || quote.quotationNo}/view`}
-                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                          title={language === "ar" ? "معاينة العرض" : "View"}
-                                        >
-                                          <ExternalLink className="w-4 h-4" />
-                                        </Link>
-                                        <a
-                                          href={`/quotation/${quote.id || quote.quotationNo}?print=true`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors"
-                                          title={language === "ar" ? "طباعة / تنزيل PDF" : "Print / PDF"}
-                                        >
-                                          <Printer className="w-4 h-4" />
-                                        </a>
-                                        <Link
-                                          href={`/quotation/${quote.id || quote.quotationNo}`}
-                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                          title={t("editTitle")}
-                                        >
-                                          <Edit className="w-4 h-4" />
-                                        </Link>
-                                        <button
-                                          onClick={(e) => handleDeleteQuotation(quote.id, e)}
-                                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                                          title={t("deleteTitle")}
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                    </td>
+                          filteredQuotations.length === 0 ? (
+                            <div className="text-center py-16 px-4">
+                              <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                              <h3 className="text-base font-bold text-slate-800">{t("noQuotesFound")}</h3>
+                              <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-md mx-auto">
+                                {searchQuery ? (language === "ar" ? "لا توجد نتائج مطابقة لبحثك." : "No quotations match your search.") : (language === "ar" ? "ابدأ بإنشاء أول عرض سعر احترافي لعملائك." : "Start by creating your first quotation.")}
+                              </p>
+                              {!searchQuery && (
+                                <Link
+                                  href="/quotation/new"
+                                  className="inline-flex items-center gap-2 mt-4 text-xs font-semibold bg-purple-700 hover:bg-purple-800 px-4 py-2 rounded-xl text-white shadow-sm"
+                                >
+                                  <Plus className="w-4 h-4" /> {t("newQuotation")}
+                                </Link>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse" dir={isRtl ? "rtl" : "ltr"}>
+                                <thead>
+                                  <tr className="border-b border-slate-200 bg-slate-50/80 text-xs text-slate-600 font-semibold tracking-wider">
+                                    <th className="py-3.5 px-5">{t("quoteNo")}</th>
+                                    <th className="py-3.5 px-5">{t("clientName")}</th>
+                                    <th className="py-3.5 px-5">{t("date")}</th>
+                                    <th className="py-3.5 px-5 text-right">{t("total")}</th>
+                                    <th className="py-3.5 px-5 text-center">{t("status")}</th>
+                                    <th className="py-3.5 px-5 text-center">{t("actions")}</th>
                                   </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-sm">
+                                  {filteredQuotations.map((quote) => {
+                                    const statusBg =
+                                      quote.status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                        quote.status === "executed" ? "bg-purple-50 text-purple-700 border-purple-200" :
+                                          quote.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
+                                            quote.status === "cancelled" ? "bg-slate-100 text-slate-600 border-slate-200" :
+                                              "bg-amber-50 text-amber-700 border-amber-200";
+
+                                    return (
+                                      <tr key={quote.id} className="hover:bg-slate-50/70 transition-colors group">
+                                        <td className="py-3.5 px-5 font-mono font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+                                          {quote.quotationNo}
+                                        </td>
+                                        <td className="py-3.5 px-5 font-medium text-slate-800">
+                                          <div>{quote.clientName}</div>
+                                          {quote.projectReference && (
+                                            <div className="text-[11px] text-slate-400 font-normal">{quote.projectReference}</div>
+                                          )}
+                                        </td>
+                                        <td className="py-3.5 px-5 text-slate-500 text-xs">
+                                          {quote.date}
+                                        </td>
+                                        <td className="py-3.5 px-5 text-right font-mono font-bold text-slate-900">
+                                          {quote.total.toLocaleString("en-AE", { maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-500 font-sans">AED</span>
+                                        </td>
+                                        <td className="py-3.5 px-5 text-center">
+                                          <select
+                                            disabled={statusChanging === quote.id}
+                                            value={quote.status || "pending"}
+                                            onChange={(e) => handleStatusChange(quote, e.target.value as any)}
+                                            className={`text-xs font-semibold rounded-lg px-2.5 py-1 border outline-none cursor-pointer ${statusBg}`}
+                                          >
+                                            <option value="pending">{t("statusPending")}</option>
+                                            <option value="approved">{t("statusApproved")}</option>
+                                            <option value="executed">{t("statusExecuted")}</option>
+                                            <option value="rejected">{t("statusRejected")}</option>
+                                            <option value="cancelled">{t("statusCancelled")}</option>
+                                          </select>
+                                        </td>
+                                        <td className="py-3.5 px-5 text-center">
+                                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                            {/* Dual Instant Invoice Buttons if Approved */}
+                                            {quote.status === "approved" && (
+                                              <>
+                                                <a
+                                                  href={`/quotation/${quote.id || quote.quotationNo}?view=invoice&type=standard&print=true`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="px-2 py-1 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition border border-indigo-200"
+                                                  title="استعراض / طباعة الفاتورة العادية (0% بيان أسعار)"
+                                                >
+                                                  📄 عادية
+                                                </a>
+                                                <a
+                                                  href={`/quotation/${quote.id || quote.quotationNo}?view=invoice&type=tax&print=true`}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="px-2 py-1 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-[10px] transition border border-purple-200"
+                                                  title="استعراض / طباعة الفاتورة الضريبية (5% VAT)"
+                                                >
+                                                  🧾 ضريبية
+                                                </a>
+                                              </>
+                                            )}
+
+                                            <Link
+                                              href={`/quotation/${quote.id || quote.quotationNo}/view`}
+                                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                                              title={language === "ar" ? "معاينة العرض" : "View"}
+                                            >
+                                              <ExternalLink className="w-4 h-4" />
+                                            </Link>
+                                            <a
+                                              href={`/quotation/${quote.id || quote.quotationNo}?print=true`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="p-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors"
+                                              title={language === "ar" ? "طباعة / تنزيل PDF" : "Print / PDF"}
+                                            >
+                                              <Printer className="w-4 h-4" />
+                                            </a>
+                                            <Link
+                                              href={`/quotation/${quote.id || quote.quotationNo}`}
+                                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                                              title={t("editTitle")}
+                                            >
+                                              <Edit className="w-4 h-4" />
+                                            </Link>
+                                            <button
+                                              onClick={(e) => handleDeleteQuotation(quote.id, e)}
+                                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                              title={t("deleteTitle")}
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                       </div>
                     </div>
                   )}
@@ -1771,51 +1781,45 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setContractsSubTab("contracts")}
-                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          contractsSubTab === "contracts"
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-                        }`}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${contractsSubTab === "contracts"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
                       >
                         <ScrollText className="w-4 h-4" />
                         <span>العقود الرسمية</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
-                          contractsSubTab === "contracts" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${contractsSubTab === "contracts" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                          }`}>
                           {contracts.length}
                         </span>
                       </button>
 
                       <button
                         onClick={() => setContractsSubTab("certificates")}
-                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          contractsSubTab === "certificates"
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-                        }`}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${contractsSubTab === "certificates"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
                       >
                         <Award className="w-4 h-4" />
                         <span>شهادات الإنجاز والتسليم</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
-                          contractsSubTab === "certificates" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${contractsSubTab === "certificates" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                          }`}>
                           {certificates.length}
                         </span>
                       </button>
 
                       <button
                         onClick={() => setContractsSubTab("letters")}
-                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          contractsSubTab === "letters"
-                            ? "bg-blue-600 text-white shadow-xs"
-                            : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-                        }`}
+                        className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${contractsSubTab === "letters"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                          }`}
                       >
                         <Mail className="w-4 h-4" />
                         <span>الخطابات والمراسلات</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${
-                          contractsSubTab === "letters" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono ${contractsSubTab === "letters" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                          }`}>
                           {letters.length}
                         </span>
                       </button>
@@ -1861,9 +1865,8 @@ export default function Dashboard() {
                         placeholder={t("searchPlaceholder")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className={`w-full bg-slate-50 border border-slate-200 rounded-xl ${
-                          isRtl ? "pr-10 pl-4" : "pl-10 pr-4"
-                        } py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20`}
+                        className={`w-full bg-slate-50 border border-slate-200 rounded-xl ${isRtl ? "pr-10 pl-4" : "pl-10 pr-4"
+                          } py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20`}
                       />
                     </div>
                   </div>
@@ -2181,6 +2184,7 @@ export default function Dashboard() {
                   onSaveAttendance={handleSaveAttendance}
                   onDeleteAttendance={handleDeleteAttendance}
                   onSavePayroll={handleSavePayroll}
+                  onDeletePayroll={handleDeletePayroll}
                   onSaveProject={handleSaveProject}
                   onOpenPermissionsModal={() => setPermissionsModalOpen(true)}
                 />
